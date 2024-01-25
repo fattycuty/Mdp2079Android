@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".BluetoothFragment"
+    tools:layout_editor_absoluteX="-3dp"
+    tools:layout_editor_absoluteY="0dp">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+    <TextView
+        android:id="@+id/tvBtStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Disconnected"
+        android:textSize="40sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:textColor="@color/red"/>
+
+    <ImageView
+        android:id="@+id/ivBluetooth"
+        android:layout_width="78dp"
+        android:layout_height="81dp"
+        android:src="@drawable/ic_bluetooth_foreground"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.499"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvBtStatus" />
+
+    <Button
+        android:id="@+id/btnBtStopScan"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stop Scan"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnBtStartScan" />
+
+    <Button
+        android:id="@+id/btnBtStartScan"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Start Scan"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ivBluetooth" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="1223dp"
+        android:layout_height="418dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnBtStopScan"
+        app:layout_constraintVertical_bias="0.0">
+
+
+        <TextView
+            android:id="@+id/tvPairedDevices"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Paired Devices"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/tvAvailDevices"
+            app:layout_constraintTop_toTopOf="parent" />
+
+
+        <TextView
+            android:id="@+id/tvAvailDevices"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Available Devices"
+            app:layout_constraintEnd_toStartOf="@+id/tvPairedDevices"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ListView
+            android:id="@+id/lvAvailDevices"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_marginStart="296dp"
+            android:layout_marginTop="20dp"
+            android:clickable="true"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvAvailDevices" />
+
+        <ListView
+            android:id="@+id/lvPairedDevices"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="284dp"
+            android:clickable="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvPairedDevices" />
+
+<!--        <EditText-->
+<!--            android:id="@+id/etSendMsg"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:hint="Enter Message Here"-->
+<!--            app:layout_constraintStart_toStartOf="@+id/lvAvailDevices"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/lvAvailDevices" />-->
+
+<!--        <Button-->
+<!--            android:id="@+id/btnSendMsg"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="Send"-->
+<!--            app:layout_constraintBottom_toBottomOf="@+id/etSendMsg"-->
+<!--            app:layout_constraintStart_toEndOf="@+id/etSendMsg"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/lvAvailDevices" />-->
+
+<!--        <LinearLayout-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            app:layout_constraintBottom_toBottomOf="parent"-->
+<!--            app:layout_constraintEnd_toEndOf="@+id/etSendMsg"-->
+<!--            app:layout_constraintStart_toStartOf="@+id/etSendMsg"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/etSendMsg">-->
+
+<!--            <TextView-->
+<!--                android:id="@+id/tvIncMsgs"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="0dp"-->
+<!--                android:layout_weight="1"-->
+<!--                android:text="placeholder"-->
+<!--                app:layout_constraintStart_toStartOf="@+id/etSendMsg"-->
+<!--                app:layout_constraintTop_toBottomOf="@+id/etSendMsg" />-->
+<!--        </LinearLayout>-->
+        <TextView
+            android:id="@+id/tvConnectedTo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Connected To: None"
+            app:layout_constraintEnd_toStartOf="@+id/lvPairedDevices"
+            app:layout_constraintStart_toEndOf="@+id/lvAvailDevices"
+            app:layout_constraintTop_toBottomOf="@+id/lvAvailDevices"
+            android:textColor="@color/red"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <Button
+        android:id="@+id/btnBtOnOff"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="On/Off Bluetooth"
+        app:layout_constraintBottom_toBottomOf="@+id/ivBluetooth"
+        app:layout_constraintEnd_toStartOf="@+id/ivBluetooth"
+        app:layout_constraintTop_toBottomOf="@+id/tvBtStatus" />
+
+    <Button
+        android:id="@+id/btnBtDiscoverable"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Make Device Discoverable"
+        app:layout_constraintBottom_toBottomOf="@+id/ivBluetooth"
+        app:layout_constraintStart_toEndOf="@+id/ivBluetooth"
+        app:layout_constraintTop_toBottomOf="@+id/tvBtStatus" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
