@@ -1,7 +1,9 @@
 package com.example.emptymdp;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -9,48 +11,58 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.nfc.Tag;
+import android.graphics.Color;
 import android.os.Bundle;
 
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.core.app.ActivityCompat;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.fragment.app.FragmentActivity;
 
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.lang.reflect.Method;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 
 public class BluetoothFragment extends Fragment {
-
-    private static final String TAG = "btlog";
+    // final strings
+    private static final String TAG = "btfrag";
     private final static int REQUEST_ENABLE_BT = 1;
-    private static final UUID MY_UUID_INSECURE = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    BluetoothConnectionService btConnSvc;
+    //private static final UUID MY_UUID_INSECURE = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private static final UUID MY_UUID_SECURE = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
+    private static BluetoothConnectionService btConnSvc;
     BluetoothAdapter bluetoothAdapter;
-    BluetoothDevice btDevice;
+    // layout views
     ListView lvPaired, lvAvail;
     Button btnStartScan, btnBtOnOff, btnStopScan, btnMakeDiscoverable;
     ArrayList<BluetoothDevice> availDeviceList, pairedDeviceList;
     DeviceListAdapter availDeviceAdapter, pairedDeviceAdapter;
-    static TextView tvBtStatus, tvConnectedTo;
+    TextView tvBtStatus;
+    private String mConnectedDeviceName;
+    ProgressDialog mProgressDialog;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // get bt adapter
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (btConnSvc==null)
+            btConnSvc = new BluetoothConnectionService(getContext(),mHandler);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -60,24 +72,33 @@ public class BluetoothFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        //Toast.makeText(getContext(), "Resuming", Toast.LENGTH_SHORT).show();
+        if (bluetoothAdapter!=null && bluetoothAdapter.isEnabled() && mConnectedDeviceName!=null){
+            setStatus("Connected to "+ mConnectedDeviceName, Color.GREEN);
+        }
+    }
+
+    @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // get bt adapter
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bluetoothAdapter!=null && bluetoothAdapter.isEnabled() && mConnectedDeviceName==null){
+            btConnSvc.start();
+        }
 
         // ===================== getting ui elements =====================
-        lvAvail = getView().findViewById(R.id.lvAvailDevices);
-        lvPaired = getView().findViewById(R.id.lvPairedDevices);
-        btnStartScan = getView().findViewById(R.id.btnBtStartScan);
-        btnBtOnOff = getView().findViewById(R.id.btnBtOnOff);
-        btnStopScan = getView().findViewById(R.id.btnBtStopScan);
-        btnMakeDiscoverable = getView().findViewById(R.id.btnBtDiscoverable);
-        tvBtStatus = getView().findViewById(R.id.tvBtStatus);
-        tvConnectedTo = getView().findViewById(R.id.tvConnectedTo);
+        lvAvail = getActivity().findViewById(R.id.lvAvailDevices);
+        lvPaired = getActivity().findViewById(R.id.lvPairedDevices);
+        btnStartScan = getActivity().findViewById(R.id.btnBtStartScan);
+        btnBtOnOff = getActivity().findViewById(R.id.btnBtOnOff);
+        btnStopScan = getActivity().findViewById(R.id.btnBtStopScan);
+        btnMakeDiscoverable = getActivity().findViewById(R.id.btnBtDiscoverable);
+        tvBtStatus = getActivity().findViewById(R.id.tvBtStatus);
+        
 
         // ===================== set on click listeners =====================
-
         btnStartScan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -118,7 +139,7 @@ public class BluetoothFragment extends Fragment {
 
                 BluetoothDevice device = (BluetoothDevice) parent.getItemAtPosition(position);
                 Log.d(TAG, "Avail Device Clicked: " + device.getName() + " " + device.getAddress());
-                confirmConnection(device);
+                confirmPair(device);
             }
         });
 
@@ -131,7 +152,7 @@ public class BluetoothFragment extends Fragment {
 
                 BluetoothDevice device = (BluetoothDevice) parent.getItemAtPosition(position);
                 Log.d(TAG, "Paired Device Clicked: " + device.getName() + " " + device.getAddress());
-                confirmConnection(device);
+                startConnection(device);
             }
         });
 
@@ -162,18 +183,18 @@ public class BluetoothFragment extends Fragment {
         IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         getActivity().registerReceiver(bondReceiver, bondFilter);
 
+        // ===================== others =====================
     }
 
     private void enableDisableBt() {
         if (bluetoothAdapter == null) {
             Log.d(TAG, "enableDisableBt: Does not have bt capabilities");
         }
-        //Toast.makeText(getContext(),"enabledisablebt pressed",Toast.LENGTH_SHORT).show();
+
         if (!bluetoothAdapter.isEnabled()) {
             Log.d(TAG, "enableDisableBt: enabling bt");
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            //arlBtOnOff.launch(enableBtIntent);
             getPairedDevices();
         }
 
@@ -239,6 +260,7 @@ public class BluetoothFragment extends Fragment {
         Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
         startActivity(discoverableIntent);
+        btConnSvc.start();
     }
 
     private boolean isBtTurnedOn() {
@@ -251,14 +273,13 @@ public class BluetoothFragment extends Fragment {
         return true;
     }
 
-    private void confirmConnection(BluetoothDevice device) {
+    private void confirmPair(BluetoothDevice device) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
-        builder.setPositiveButton("Connect", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User taps OK button.
                 bondDevice(device);
-                startConnection();
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -267,7 +288,7 @@ public class BluetoothFragment extends Fragment {
             }
         });
 
-        builder.setTitle("Connect to " + device.getName() + "?");
+        builder.setTitle("Pair " + device.getName() + "?");
 
         AlertDialog dialog = builder.create();
         dialog.show();
@@ -288,7 +309,7 @@ public class BluetoothFragment extends Fragment {
             }
         });
 
-        builder.setTitle("Remove connection?");
+        builder.setTitle("Remove Pair?");
 
         AlertDialog dialog = builder.create();
         dialog.show();
@@ -300,8 +321,6 @@ public class BluetoothFragment extends Fragment {
         }
         bluetoothAdapter.cancelDiscovery();
         device.createBond();
-        btDevice = device;
-        btConnSvc = new BluetoothConnectionService(getContext());
     }
 
     private void removeBond(BluetoothDevice device){
@@ -314,16 +333,22 @@ public class BluetoothFragment extends Fragment {
         } catch (Exception e){
             Log.e(TAG,e.getMessage());
         }
+        pairedDeviceAdapter.remove(device);
+        lvPaired.setAdapter(pairedDeviceAdapter);
     }
 
-    private void startBtConnection(BluetoothDevice device, UUID uuid){
-        Log.d(TAG, "startBtConnection: Init RFCOM Bt Conn");
+    private void startConnection(BluetoothDevice device){
+        if (!BluetoothPermissions.checkBluetoothConnectionPermission(getContext())) {
+            BluetoothPermissions.requestBluetoothPermissions(getActivity());
+        }
+        bluetoothAdapter.cancelDiscovery();
 
-        btConnSvc.startClient(device,uuid);
-    }
-
-    private void startConnection(){
-        startBtConnection(btDevice, MY_UUID_INSECURE);
+        if (btConnSvc!=null){
+            btConnSvc.connect(device);
+            //Toast.makeText(getContext(), "Connected to "+device.getName(),Toast.LENGTH_SHORT).show();
+        } else {
+            //Toast.makeText(getContext(), "Failed to connect to "+device.getName(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     private final BroadcastReceiver discoveryReceiver = new BroadcastReceiver() {
@@ -342,7 +367,6 @@ public class BluetoothFragment extends Fragment {
                     availDeviceAdapter = new DeviceListAdapter(getContext(),R.layout.custom_list_view, availDeviceList);
                     AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
                     lvAvail.setAdapter(availDeviceAdapter);
-
                 }
             }
         }
@@ -364,7 +388,12 @@ public class BluetoothFragment extends Fragment {
                 // bonded already
                 if (device.getBondState() == BluetoothDevice.BOND_BONDED){
                     Log.d(TAG,"BondReceiver: BOND_BONDED with "+device.getName());
-                    btDevice = device;
+
+                    pairedDeviceAdapter.add(device);
+                    lvPaired.setAdapter(pairedDeviceAdapter);
+
+                    setStatus("Connected to "+device.getName(),Color.GREEN);
+
                 }
                 // creating a bond
                 if (device.getBondState() == BluetoothDevice.BOND_BONDING){
@@ -378,7 +407,6 @@ public class BluetoothFragment extends Fragment {
 
         }
     };
-
 
     private final BroadcastReceiver btStateReceiver = new BroadcastReceiver() {
         @Override
@@ -398,6 +426,7 @@ public class BluetoothFragment extends Fragment {
                         break;
                     case BluetoothAdapter.STATE_ON:
                         Log.d(TAG,"bt state on");
+                        getPairedDevices();
                         break;
                     case BluetoothAdapter.STATE_TURNING_ON:
                         Log.d(TAG,"bt state turning on");
@@ -407,18 +436,6 @@ public class BluetoothFragment extends Fragment {
         }
     };
 
-    ActivityResultLauncher<Intent> arlBtOnOff = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            new ActivityResultCallback<ActivityResult>() {
-                @Override
-                public void onActivityResult(ActivityResult o) {
-                    if (o.getResultCode() == Activity.RESULT_OK){
-                        Intent data = o.getData();
-                    }
-                }
-            }
-    );
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -427,15 +444,78 @@ public class BluetoothFragment extends Fragment {
         getActivity().unregisterReceiver(bondReceiver);
     }
 
-    public static TextView getTvBtStatus(){
-        return tvBtStatus;
+    @SuppressLint("HandlerLeak")
+    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            FragmentActivity activity = getActivity();
+            switch (msg.what) {
+                case BluetoothConnectionService.Constants.MESSAGE_STATE_CHANGE:
+                    switch (msg.arg1) {
+                        case BluetoothConnectionService.STATE_CONNECTED:
+                            setStatus("Connected to "+ mConnectedDeviceName, Color.GREEN);
+                            break;
+                        case BluetoothConnectionService.STATE_CONNECTING:
+                            mConnectedDeviceName = null;
+                            setStatus("Connecting...", Color.YELLOW);
+                            break;
+                        case BluetoothConnectionService.STATE_LISTEN:
+                            //setStatus("Listening...", Color.YELLOW);
+                            break;
+                        case BluetoothConnectionService.STATE_NONE:
+                            mConnectedDeviceName = null;
+                            setStatus("Disconnected",Color.RED);
+                            break;
+                    }
+                    break;
+                case BluetoothConnectionService.Constants.MESSAGE_WRITE:
+                    byte[] writeBuf = (byte[]) msg.obj;
+                    // construct a string from the buffer
+                    String writeMessage = new String(writeBuf);
+                    HomeFragment.getMessage("Me:  " + writeMessage+"\n");
+                    break;
+                case BluetoothConnectionService.Constants.MESSAGE_READ:
+                    byte[] readBuf = (byte[]) msg.obj;
+                    // construct a string from the valid bytes in the buffer
+                    String readMessage = new String(readBuf, 0, msg.arg1);
+                    HomeFragment.getMessage(mConnectedDeviceName + ":  " + readMessage+"\n");
+                    break;
+                case BluetoothConnectionService.Constants.MESSAGE_DEVICE_NAME:
+                    // save the connected device's name
+                    mConnectedDeviceName = msg.getData().getString(BluetoothConnectionService.Constants.DEVICE_NAME);
+                    if (null != activity) {
+                        Toast toast = Toast.makeText(activity, "Connected to "
+                                + mConnectedDeviceName, Toast.LENGTH_SHORT);
+                        toast.show();
+                        if (!isVisible()){
+                            sendToHomeFrag("Connected to "+ mConnectedDeviceName);
+                        }
+                    }
+                    break;
+                case BluetoothConnectionService.Constants.MESSAGE_TOAST:
+                    if (null != activity) {
+                        String toastMsg = msg.getData().getString(BluetoothConnectionService.Constants.TOAST);
+                        Toast toast = Toast.makeText(activity, toastMsg,
+                                Toast.LENGTH_SHORT);
+                        toast.show();
+                        if (!isVisible()){
+                            sendToHomeFrag(toastMsg);
+                        }
+                    }
+                    break;
+            }
+        }
+    };
+
+    private void setStatus(String status, int color){
+        tvBtStatus.setText(status);
+        tvBtStatus.setTextColor(color);
     }
 
-    public static TextView getTvConnectedTo(){
-        return tvConnectedTo;
+    private void sendToHomeFrag(String msg){
+        Bundle bundle = new Bundle();
+        bundle.putString("bundleKey", msg);
+        getParentFragmentManager().setFragmentResult("homeFragKey", bundle);
     }
-
-
-
 
 }

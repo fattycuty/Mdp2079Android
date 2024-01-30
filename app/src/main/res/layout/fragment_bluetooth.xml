@@ -135,15 +135,6 @@
 <!--                app:layout_constraintStart_toStartOf="@+id/etSendMsg"-->
 <!--                app:layout_constraintTop_toBottomOf="@+id/etSendMsg" />-->
 <!--        </LinearLayout>-->
-        <TextView
-            android:id="@+id/tvConnectedTo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Connected To: None"
-            app:layout_constraintEnd_toStartOf="@+id/lvPairedDevices"
-            app:layout_constraintStart_toEndOf="@+id/lvAvailDevices"
-            app:layout_constraintTop_toBottomOf="@+id/lvAvailDevices"
-            android:textColor="@color/red"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

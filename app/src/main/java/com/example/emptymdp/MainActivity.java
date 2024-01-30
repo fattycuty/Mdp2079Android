@@ -1,14 +1,11 @@
 package com.example.emptymdp;
 
-import static android.app.PendingIntent.getActivity;
-
-import static java.security.AccessController.getContext;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.viewpager2.widget.ViewPager2;
 
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,11 +14,13 @@ import android.view.MenuItem;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
+import com.google.android.material.tabs.TabLayout;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-
+    private final String TAG = "mainapp";
     BottomNavigationView bottomNavigationView;
-
     HomeFragment homeFragment = new HomeFragment();
     BluetoothFragment bluetoothFragment = new BluetoothFragment();
     TestFragment testFragment = new TestFragment();
@@ -31,12 +30,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        checkPermission();
-
-        if (!BluetoothPermissions.checkBluetoothConnectionPermission(this)) {
-            BluetoothPermissions.requestBluetoothPermissions(MainActivity.this);
-        }
-
+        Log.d(TAG,"STARTING");
         bottomNavigationView = findViewById(R.id.bottomNavigationView);
 
         getSupportFragmentManager().beginTransaction().replace(R.id.flFragment, homeFragment).commit();
@@ -58,6 +52,14 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+
+        checkPermission();
+
+        if (!BluetoothPermissions.checkBluetoothConnectionPermission(this)) {
+            BluetoothPermissions.requestBluetoothPermissions(MainActivity.this);
+        }
+
+
     }
 
     public void checkPermission() {
