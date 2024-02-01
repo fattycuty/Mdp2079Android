@@ -19,7 +19,7 @@ import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-    private final String TAG = "mainapp";
+    private final String TAG = "debugMainAct";
     BottomNavigationView bottomNavigationView;
     HomeFragment homeFragment = new HomeFragment();
     BluetoothFragment bluetoothFragment = new BluetoothFragment();

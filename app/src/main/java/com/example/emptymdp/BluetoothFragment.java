@@ -40,7 +40,7 @@ import java.util.UUID;
 
 public class BluetoothFragment extends Fragment {
     // final strings
-    private static final String TAG = "btfrag";
+    private static final String TAG = "debugBtFrag";
     private final static int REQUEST_ENABLE_BT = 1;
     //private static final UUID MY_UUID_INSECURE = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private static final UUID MY_UUID_SECURE = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
@@ -343,12 +343,10 @@ public class BluetoothFragment extends Fragment {
         }
         bluetoothAdapter.cancelDiscovery();
 
-        if (btConnSvc!=null){
+        if (btConnSvc!=null)
             btConnSvc.connect(device);
-            //Toast.makeText(getContext(), "Connected to "+device.getName(),Toast.LENGTH_SHORT).show();
-        } else {
-            //Toast.makeText(getContext(), "Failed to connect to "+device.getName(), Toast.LENGTH_SHORT).show();
-        }
+
+
     }
 
     private final BroadcastReceiver discoveryReceiver = new BroadcastReceiver() {
@@ -484,10 +482,11 @@ public class BluetoothFragment extends Fragment {
                     // save the connected device's name
                     mConnectedDeviceName = msg.getData().getString(BluetoothConnectionService.Constants.DEVICE_NAME);
                     if (null != activity) {
-                        Toast toast = Toast.makeText(activity, "Connected to "
-                                + mConnectedDeviceName, Toast.LENGTH_SHORT);
-                        toast.show();
-                        if (!isVisible()){
+                        if (isVisible()){
+                            Toast toast = Toast.makeText(activity, "Connected to "
+                                    + mConnectedDeviceName, Toast.LENGTH_SHORT);
+                            toast.show();
+                        } else   {
                             sendToHomeFrag("Connected to "+ mConnectedDeviceName);
                         }
                     }
@@ -495,10 +494,11 @@ public class BluetoothFragment extends Fragment {
                 case BluetoothConnectionService.Constants.MESSAGE_TOAST:
                     if (null != activity) {
                         String toastMsg = msg.getData().getString(BluetoothConnectionService.Constants.TOAST);
-                        Toast toast = Toast.makeText(activity, toastMsg,
-                                Toast.LENGTH_SHORT);
-                        toast.show();
-                        if (!isVisible()){
+                        if (isVisible()){
+                            Toast toast = Toast.makeText(activity, toastMsg,
+                                    Toast.LENGTH_SHORT);
+                            toast.show();
+                        } else  {
                             sendToHomeFrag(toastMsg);
                         }
                     }
