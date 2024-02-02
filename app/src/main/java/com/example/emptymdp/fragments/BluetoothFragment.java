@@ -1,7 +1,6 @@
-package com.example.emptymdp;
+package com.example.emptymdp.fragments;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -14,10 +13,6 @@ import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -34,6 +29,11 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.emptymdp.utilities.DeviceListAdapter;
+import com.example.emptymdp.R;
+import com.example.emptymdp.bluetooth.BluetoothConnectionService;
+import com.example.emptymdp.bluetooth.BluetoothPermissions;
+
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
@@ -49,7 +49,7 @@ public class BluetoothFragment extends Fragment {
     // layout views
     ListView lvPaired, lvAvail;
     Button btnStartScan, btnBtOnOff, btnStopScan, btnMakeDiscoverable;
-    ArrayList<BluetoothDevice> availDeviceList, pairedDeviceList;
+    static ArrayList<BluetoothDevice> availDeviceList, pairedDeviceList;
     DeviceListAdapter availDeviceAdapter, pairedDeviceAdapter;
     TextView tvBtStatus;
     private String mConnectedDeviceName;
@@ -72,21 +72,8 @@ public class BluetoothFragment extends Fragment {
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        //Toast.makeText(getContext(), "Resuming", Toast.LENGTH_SHORT).show();
-        if (bluetoothAdapter!=null && bluetoothAdapter.isEnabled() && mConnectedDeviceName!=null){
-            setStatus("Connected to "+ mConnectedDeviceName, Color.GREEN);
-        }
-    }
-
-    @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-        if (bluetoothAdapter!=null && bluetoothAdapter.isEnabled() && mConnectedDeviceName==null){
-            btConnSvc.start();
-        }
 
         // ===================== getting ui elements =====================
         lvAvail = getActivity().findViewById(R.id.lvAvailDevices);
@@ -184,6 +171,13 @@ public class BluetoothFragment extends Fragment {
         getActivity().registerReceiver(bondReceiver, bondFilter);
 
         // ===================== others =====================
+
+        if (bluetoothAdapter!=null && bluetoothAdapter.isEnabled()){
+            if (mConnectedDeviceName==null)
+                btConnSvc.start();
+            else
+                setStatus("Connected to "+ mConnectedDeviceName, Color.GREEN);
+        }
     }
 
     private void enableDisableBt() {
@@ -390,7 +384,7 @@ public class BluetoothFragment extends Fragment {
                     pairedDeviceAdapter.add(device);
                     lvPaired.setAdapter(pairedDeviceAdapter);
 
-                    setStatus("Connected to "+device.getName(),Color.GREEN);
+                    //setStatus("Connected to "+device.getName(),Color.GREEN);
 
                 }
                 // creating a bond
@@ -470,37 +464,34 @@ public class BluetoothFragment extends Fragment {
                     byte[] writeBuf = (byte[]) msg.obj;
                     // construct a string from the buffer
                     String writeMessage = new String(writeBuf);
-                    HomeFragment.getMessage("Me:  " + writeMessage+"\n");
+                    //HomeFragment.getMessage("Me:  " + writeMessage+"\n");
+                    sendToHomeFrag("NORMAL_TEXT","Me:  " + writeMessage+"\n");
                     break;
                 case BluetoothConnectionService.Constants.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
-                    HomeFragment.getMessage(mConnectedDeviceName + ":  " + readMessage+"\n");
+
+                    // handle message differently once we agree on the format
+                    //HomeFragment.getMessage(mConnectedDeviceName + ":  " + readMessage+"\n");
+                    sendToHomeFrag("NORMAL_TEXT",mConnectedDeviceName + ":  " + readMessage+"\n");
                     break;
                 case BluetoothConnectionService.Constants.MESSAGE_DEVICE_NAME:
                     // save the connected device's name
                     mConnectedDeviceName = msg.getData().getString(BluetoothConnectionService.Constants.DEVICE_NAME);
                     if (null != activity) {
-                        if (isVisible()){
-                            Toast toast = Toast.makeText(activity, "Connected to "
-                                    + mConnectedDeviceName, Toast.LENGTH_SHORT);
-                            toast.show();
-                        } else   {
-                            sendToHomeFrag("Connected to "+ mConnectedDeviceName);
-                        }
+                        Toast toast = Toast.makeText(activity, "Connected to "
+                                + mConnectedDeviceName, Toast.LENGTH_SHORT);
+                        toast.show();
                     }
                     break;
                 case BluetoothConnectionService.Constants.MESSAGE_TOAST:
                     if (null != activity) {
                         String toastMsg = msg.getData().getString(BluetoothConnectionService.Constants.TOAST);
-                        if (isVisible()){
-                            Toast toast = Toast.makeText(activity, toastMsg,
-                                    Toast.LENGTH_SHORT);
-                            toast.show();
-                        } else  {
-                            sendToHomeFrag(toastMsg);
-                        }
+                        Toast toast = Toast.makeText(activity, toastMsg,
+                                Toast.LENGTH_SHORT);
+                        toast.show();
+
                     }
                     break;
             }
@@ -512,9 +503,9 @@ public class BluetoothFragment extends Fragment {
         tvBtStatus.setTextColor(color);
     }
 
-    private void sendToHomeFrag(String msg){
+    private void sendToHomeFrag(String key, String msg){
         Bundle bundle = new Bundle();
-        bundle.putString("bundleKey", msg);
+        bundle.putString(key, msg);
         getParentFragmentManager().setFragmentResult("homeFragKey", bundle);
     }
 

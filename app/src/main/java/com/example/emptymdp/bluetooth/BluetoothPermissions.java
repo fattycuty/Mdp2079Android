@@ -1,4 +1,4 @@
-package com.example.emptymdp;
+package com.example.emptymdp.bluetooth;
 
 import android.Manifest;
 import android.app.Activity;

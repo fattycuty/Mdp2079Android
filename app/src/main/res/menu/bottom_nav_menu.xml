@@ -11,9 +11,4 @@
         android:title="Bluetooth"
         android:icon="@drawable/ic_bluetooth_foreground"/>
 
-    <item
-        android:id="@+id/miTestFragment"
-        android:title="Test"
-        android:icon="@drawable/ic_bluetooth_foreground"/>
-
 </menu>

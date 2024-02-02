@@ -1,4 +1,4 @@
-package com.example.emptymdp;
+package com.example.emptymdp.utilities;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -11,6 +11,8 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.example.emptymdp.R;
 
 import java.util.ArrayList;
 

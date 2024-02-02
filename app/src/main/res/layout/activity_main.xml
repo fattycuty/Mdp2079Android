@@ -13,6 +13,11 @@
         app:layout_constraintBottom_toTopOf="@+id/bottomNavigationView"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <com.example.emptymdp.utilities.ViewPagerNoSwipe
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/vpMain"/>
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigationView"
         android:layout_width="match_parent"

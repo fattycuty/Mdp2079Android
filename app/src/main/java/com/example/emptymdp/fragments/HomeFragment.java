@@ -1,4 +1,4 @@
-package com.example.emptymdp;
+package com.example.emptymdp.fragments;
 
 import static android.view.DragEvent.ACTION_DROP;
 
@@ -27,13 +27,17 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.emptymdp.R;
+import com.example.emptymdp.arena.PixelGridView;
+import com.example.emptymdp.bluetooth.BluetoothConnectionService;
+
 
 public class HomeFragment extends Fragment {
 
     private final String TAG = "debugHomeFrag";
-    static TextView tvIncMsgs;
+    static TextView tvIncMsgs, tvRoboStatus;
     static StringBuilder messages = new StringBuilder();
-    Button btnSendMsg, btnClearMap, btnRotateCar;
+    Button btnSendMsg, btnClearMap, btnRotateCar, btnFastestPath, btnImageRecognition;
     EditText etSendMsg;
     BluetoothConnectionService btConnSvc;
     ImageButton btnTl,btnTr,btnBr,btnBl,btnUp,btnDown;
@@ -41,18 +45,6 @@ public class HomeFragment extends Fragment {
     PixelGridView pixelGridView;
     ImageView ivCar, ivObstacle;
     TextView tvPlaceStatus;
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        getParentFragmentManager().setFragmentResultListener("homeFragKey", this, new FragmentResultListener() {
-            @Override
-            public void onFragmentResult(@NonNull String requestKey, @NonNull Bundle bundle) {
-                String result = bundle.getString("bundleKey");
-                Toast.makeText(getContext(), result, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -65,7 +57,16 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        btConnSvc = BluetoothConnectionService.getInstance();
+        getParentFragmentManager().setFragmentResultListener("homeFragKey", this, new FragmentResultListener() {
+            @Override
+            public void onFragmentResult(@NonNull String requestKey, @NonNull Bundle bundle) {
+                String message = bundle.getString("NORMAL_TEXT");
+                //Log.d(TAG, "onFragmentResult: fired "+message);
+                messages.append(message);
+                tvIncMsgs.setText(messages);
+
+            }
+        });
 
         // ===================== ui elements =====================
         btnSendMsg = getView().findViewById(R.id.btnSendMsg);
@@ -82,6 +83,9 @@ public class HomeFragment extends Fragment {
         tvPlaceStatus = getView().findViewById(R.id.tvPlaceStatus);
         btnClearMap = getView().findViewById(R.id.btnClearMap);
         btnRotateCar = getView().findViewById(R.id.btnRotateCar);
+        tvRoboStatus = getView().findViewById(R.id.tvRoboStatus);
+        btnFastestPath = getView().findViewById(R.id.btnFastestPath);
+        btnImageRecognition = getView().findViewById(R.id.btnImageRecognition);
 
         // ===================== setup ui elements =====================
 
@@ -114,19 +118,17 @@ public class HomeFragment extends Fragment {
                 pixelGridView.rotateCar();
             }
         });
+
         btnClearMap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 pixelGridView.clearMap();
             }
         });
+
         btnSendMsg.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (btConnSvc==null  || (btConnSvc.getState() != BluetoothConnectionService.STATE_CONNECTED)){
-                    Toast.makeText(getContext(), "Device is not connected", Toast.LENGTH_SHORT).show();
-                    return;
-                }
                 String msg = etSendMsg.getText().toString();
                 if (msg.equals("")) return;
                 sendMessage(msg);
@@ -339,11 +341,6 @@ public class HomeFragment extends Fragment {
 
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-    }
-
     public static void getMessage(String msg){
         messages.append(msg);
         tvIncMsgs.setText(messages);
@@ -359,7 +356,8 @@ public class HomeFragment extends Fragment {
     }
 
     public void sendMessage(String msg){
-        if (btConnSvc==null  || (btConnSvc.getState() != BluetoothConnectionService.STATE_CONNECTED)){
+        if (btConnSvc == null) btConnSvc = BluetoothConnectionService.getInstance();
+        if (btConnSvc.getState() != BluetoothConnectionService.STATE_CONNECTED){
             Toast.makeText(getContext(), "Device is not connected", Toast.LENGTH_SHORT).show();
             return;
         }

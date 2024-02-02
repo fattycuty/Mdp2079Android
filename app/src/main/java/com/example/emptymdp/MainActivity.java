@@ -1,10 +1,10 @@
 package com.example.emptymdp;
 
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.fragment.app.Fragment;
-import androidx.viewpager2.widget.ViewPager2;
+import androidx.viewpager.widget.ViewPager;
 
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -12,18 +12,18 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
 
+import com.example.emptymdp.bluetooth.BluetoothPermissions;
+import com.example.emptymdp.utilities.ViewPagerAdapter;
+import com.example.emptymdp.utilities.ViewPagerNoSwipe;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
-import com.google.android.material.tabs.TabLayout;
-
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private final String TAG = "debugMainAct";
     BottomNavigationView bottomNavigationView;
-    HomeFragment homeFragment = new HomeFragment();
-    BluetoothFragment bluetoothFragment = new BluetoothFragment();
-    TestFragment testFragment = new TestFragment();
+    //ViewPager vpMain;
+    ViewPagerNoSwipe vpMain;
+    ViewPagerAdapter viewPagerAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,26 +32,47 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(TAG,"STARTING");
         bottomNavigationView = findViewById(R.id.bottomNavigationView);
-
-        getSupportFragmentManager().beginTransaction().replace(R.id.flFragment, homeFragment).commit();
+        vpMain = findViewById(R.id.vpMain);
+        viewPagerAdapter = new ViewPagerAdapter(getSupportFragmentManager());
+        vpMain.setAdapter(viewPagerAdapter);
 
         bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
-            public boolean onNavigationItemSelected(MenuItem item) {
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 if (item.getItemId() == R.id.miHome){
-                    getSupportFragmentManager().beginTransaction().replace(R.id.flFragment, homeFragment).commit();
+                    vpMain.setCurrentItem(0);
                     return true;
                 } else if (item.getItemId() == R.id.miBluetooth){
-                    getSupportFragmentManager().beginTransaction().replace(R.id.flFragment, bluetoothFragment).commit();
-                    return true;
-                } else if (item.getItemId() == R.id.miTestFragment){
-                    getSupportFragmentManager().beginTransaction().replace(R.id.flFragment, testFragment).commit();
+                    vpMain.setCurrentItem(1);
                     return true;
                 }
-
                 return false;
             }
         });
+        vpMain.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                switch (position) {
+                    case 0:
+                        bottomNavigationView.getMenu().findItem(R.id.miHome).setChecked(true);
+                        break;
+                    case 1:
+                        bottomNavigationView.getMenu().findItem(R.id.miBluetooth).setChecked(true);
+                        break;
+                }
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
+
 
         checkPermission();
 
@@ -80,5 +101,9 @@ public class MainActivity extends AppCompatActivity {
         } else {
             checkPermission();
         }
+    }
+
+    private void log(String logMessage){
+        Log.d(TAG, logMessage);
     }
 }

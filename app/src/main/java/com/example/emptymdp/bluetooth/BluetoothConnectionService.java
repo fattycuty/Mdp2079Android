@@ -1,11 +1,10 @@
-package com.example.emptymdp;
+package com.example.emptymdp.bluetooth;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
-import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -274,16 +273,19 @@ public class BluetoothConnectionService {
         bundle.putString(Constants.TOAST, "Device connection was lost");
         msg.setData(bundle);
         mHandler.sendMessage(msg);
-
+        Log.d(TAG, "connectionLost: toast handled");
         mState = STATE_NONE;
         // Update UI title
         updateUserInterfaceTitle();
-
+        
         reconnecting = true;
         if (mReconnectThread == null && mAdapter.isEnabled()) {
+            Log.d(TAG, "connectionLost: attempting to start thread");
             mReconnectThread = new ReconnectThread(mmDevice);
             mReconnectThread.start();
+            Log.d(TAG, "connectionLost: thread started");
         } else if (!mAdapter.isEnabled()){
+            Log.d(TAG, "connectionLost: adapter not enabled, reconnect thread nulled");
             if (mReconnectThread != null) {
                 mReconnectThread.cancel();
             }
@@ -483,7 +485,8 @@ public class BluetoothConnectionService {
                     mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, buffer)
                             .sendToTarget();
                 } catch (IOException e) {
-                    Log.e(TAG, "disconnected " + e.getMessage() );
+                    Log.e(TAG, "run: disconnected "+ e.getMessage() );
+                    Log.d(TAG, "run: attempting reconnect");
                     connectionLost();
                     break;
                 }
