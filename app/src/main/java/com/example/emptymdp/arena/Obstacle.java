@@ -2,14 +2,15 @@ package com.example.emptymdp.arena;
 
 public class Obstacle {
     private float x, y;
-    private int direction, row, col;
+    private int direction, row, col, obstacleId;
 
-    public Obstacle(float x, float y, int row, int col){
+    public Obstacle(float x, float y, int row, int col, int obstacleId){
         this.x = x;
         this.y = y;
         this.row = row;
         this.col = col;
         direction = PixelGridView.Direction.NORTH;
+        this.obstacleId = obstacleId;
     }
 
     public int getDirection() {
@@ -50,5 +51,13 @@ public class Obstacle {
 
     public void setY(float y) {
         this.y = y;
+    }
+
+    public int getObstacleId() {
+        return obstacleId;
+    }
+
+    public void setObstacleId(int obstacleId) {
+        this.obstacleId = obstacleId;
     }
 }

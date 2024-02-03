@@ -1,7 +1,5 @@
 package com.example.emptymdp.fragments;
 
-import static android.view.DragEvent.ACTION_DROP;
-
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.graphics.Canvas;
@@ -90,8 +88,8 @@ public class HomeFragment extends Fragment {
         // ===================== setup ui elements =====================
 
         // draggable objects
-        ivCar.setTag("CAR");
-        ivObstacle.setTag("OBSTACLE");
+        ivCar.setTag("NEW_CAR");
+        ivObstacle.setTag("NEW_OBSTACLE");
 
         // chat box
         tvIncMsgs.setText(messages);
@@ -145,117 +143,13 @@ public class HomeFragment extends Fragment {
         ivCar.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                setCellStatus(PixelGridView.CellValue.CAR);
-                ClipData.Item item = new ClipData.Item((CharSequence) v.getTag());
-                ClipData dragData = new ClipData((CharSequence) v.getTag(), new String[] {ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
-                View.DragShadowBuilder myShadow = new MyDragShadowBuilder(ivCar, ivCar.getDrawable());
-                v.startDragAndDrop(dragData, myShadow, null,0);
+                dragNewObject(PixelGridView.CellValue.CAR,v,ivCar);
                 return true;
             }
         });
 
-        ivCar.setOnDragListener(new View.OnDragListener() {
-            @Override
-            public boolean onDrag(View v, DragEvent e) {
-                switch(e.getAction()){
-                    case DragEvent.ACTION_DRAG_STARTED:
-
-                        // Determine whether this View can accept the dragged data.
-                        if (e.getClipDescription().hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN)) {
-
-                            // As an example, apply a blue color tint to the View to
-                            // indicate that it can accept data.
-                            //((ImageView)v).setColorFilter(Color.BLUE);
-
-                            // Invalidate the view to force a redraw in the new tint.
-                            //v.invalidate();
-
-                            // Return true to indicate that the View can accept the dragged
-                            // data.
-                            return true;
-
-                        }
-
-                        // Return false to indicate that, during the current drag and drop
-                        // operation, this View doesn't receive events again until
-                        // ACTION_DRAG_ENDED is sent.
-                        return false;
-
-                    case DragEvent.ACTION_DRAG_ENTERED:
-
-                        // Apply a green tint to the View.
-                        //((ImageView)v).setColorFilter(Color.GREEN);
-
-                        // Invalidate the view to force a redraw in the new tint.
-                        //v.invalidate();
-
-                        // Return true. The value is ignored.
-                        return true;
-
-                    case DragEvent.ACTION_DRAG_LOCATION:
-
-                        // Ignore the event.
-                        return true;
-
-                    case DragEvent.ACTION_DRAG_EXITED:
-
-                        // Reset the color tint to blue.
-                        //((ImageView)v).setColorFilter(Color.BLUE);
-
-                        // Invalidate the view to force a redraw in the new tint.
-                        //v.invalidate();
-
-                        // Return true. The value is ignored.
-                        return true;
-
-                    case ACTION_DROP:
-
-                        // Get the item containing the dragged data.
-                        //ClipData.Item item = e.getClipData().getItemAt(0);
-
-                        // Get the text data from the item.
-                        //CharSequence dragData = item.getText();
-
-                        // Display a message containing the dragged data.
-                        //Toast.makeText(getContext(), "Dragged data is " + dragData, Toast.LENGTH_SHORT).show();
-
-                        // Turn off color tints.
-                        //((ImageView)v).clearColorFilter();
-
-                        // Invalidate the view to force a redraw.
-                        //v.invalidate();
-
-                        // Return true. DragEvent.getResult() returns true.
-                        return false;
-
-                    case DragEvent.ACTION_DRAG_ENDED:
-
-                        // Turn off color tinting.
-                        //((ImageView)v).clearColorFilter();
-
-                        // Invalidate the view to force a redraw.
-                        //v.invalidate();
-
-                        // Do a getResult() and displays what happens.
-                        if (e.getResult()) {
-                            Toast.makeText(getContext(), "The drop was handled.", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(getContext(), "The drop didn't work.", Toast.LENGTH_SHORT).show();
-                        }
-
-                        // Return true. The value is ignored.
-                        return true;
-
-                    // An unknown action type is received.
-                    default:
-                        Log.d(TAG,"Unknown action type received by View.OnDragListener. ivCar");
-                        break;
-                }
-                return false;
-            }
-        });
-
         pixelGridView.setOnDragListener(new View.OnDragListener() {
+            boolean outOfBounds = false;
             @Override
             public boolean onDrag(View v, DragEvent e) {
                 switch(e.getAction()){
@@ -272,6 +166,7 @@ public class HomeFragment extends Fragment {
 
                             // Return true to indicate that the View can accept the dragged
                             // data.
+                            outOfBounds = false;
                             return true;
 
                         }
@@ -282,26 +177,37 @@ public class HomeFragment extends Fragment {
                         return false;
 
                     case DragEvent.ACTION_DRAG_ENTERED:
-
                         // Return true. The value is ignored.
+                        //Log.d(TAG, "onDrag: ACTION_DRAG_ENTERED");
+                        outOfBounds = false;
                         return false;
 
                     case DragEvent.ACTION_DRAG_LOCATION:
                         // Ignore the event.
+                        //Log.d(TAG, "onDrag: ACTION_DRAG_LOCATION");
+                        outOfBounds = false;
                         return true;
 
                     case DragEvent.ACTION_DRAG_EXITED:
                         // Return true. The value is ignored.
-                        return true;
+                        //Log.d(TAG, "onDrag: ACTION_DRAG_EXITED");
+                        outOfBounds = true;
+                        return false;
 
-                    case ACTION_DROP:
+                    case DragEvent.ACTION_DROP:
                         // Return true. DragEvent.getResult() returns true.
-                        //log(e.getX()+" "+e.getY());
-                        pixelGridView.receiveOnDrag(e.getClipData(),e.getX(),e.getY());
+                        //Log.d(TAG, "onDrag: ACTION_DROP");
+                        pixelGridView.receiveOnDrag(e,e.getX(),e.getY());
                         return true;
 
                     case DragEvent.ACTION_DRAG_ENDED:
                         // Return true. The value is ignored.
+                        //Log.d(TAG, "onDrag: ACTION_DRAG_ENDED");
+
+                        if (outOfBounds){
+                            pixelGridView.receiveOnDrag(e,-1,-1);
+
+                        }
                         return true;
 
                     // An unknown action type is received.
@@ -316,11 +222,7 @@ public class HomeFragment extends Fragment {
         ivObstacle.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                setCellStatus(PixelGridView.CellValue.OBSTACLE);
-                ClipData.Item item = new ClipData.Item((CharSequence) v.getTag());
-                ClipData dragData = new ClipData((CharSequence) v.getTag(), new String[] {ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
-                View.DragShadowBuilder myShadow = new MyDragShadowBuilder(ivObstacle, ivObstacle.getDrawable());
-                v.startDragAndDrop(dragData, myShadow, null,0);
+                dragNewObject(PixelGridView.CellValue.OBSTACLE,v,ivObstacle);
                 return true;
             }
         });
@@ -340,12 +242,6 @@ public class HomeFragment extends Fragment {
         });
 
     }
-
-    public static void getMessage(String msg){
-        messages.append(msg);
-        tvIncMsgs.setText(messages);
-    }
-
     public void manualMovement(ImageButton ib, String direction){
         ib.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -364,65 +260,33 @@ public class HomeFragment extends Fragment {
         btConnSvc.sendMessage(msg);
     }
 
-    private static class MyDragShadowBuilder extends View.DragShadowBuilder {
-
-        // The drag shadow image, defined as a drawable object.
+    public static class MyDragShadowBuilder extends View.DragShadowBuilder {
         private static Drawable shadow;
-
-        // Constructor.
         public MyDragShadowBuilder(View view, Drawable img) {
-
-            // Store the View parameter.
             super(view);
 
-            // Create a draggable image that fills the Canvas provided by the
-            // system.
-            //shadow = new ColorDrawable(Color.LTGRAY);
             shadow = img.getConstantState().newDrawable().mutate();
         }
 
-        // Define a callback that sends the drag shadow dimensions and touch point
-        // back to the system.
         @Override
         public void onProvideShadowMetrics (Point size, Point touch) {
-
-            // Define local variables.
             int width, height;
 
-            // Set the width of the shadow to half the width of the original
-            // View.
-            width = getView().getWidth() / 2;
+//            width = getView().getWidth() / 2;
+//            height = getView().getHeight() / 2;
 
-            // Set the height of the shadow to half the height of the original
-            // View.
-            height = getView().getHeight() / 2;
+            width = height = 128;
 
-            // The drag shadow is a ColorDrawable. Set its dimensions to
-            // be the same as the Canvas that the system provides. As a result,
-            // the drag shadow fills the Canvas.
             shadow.setBounds(0, 0, width, height);
 
-            // Set the size parameter's width and height values. These get back
-            // to the system through the size parameter.
             size.set(width, height);
 
-            // Set the touch point's position to be in the middle of the drag
-            // shadow.
             touch.set(width / 2, height / 2);
         }
-
-        // Define a callback that draws the drag shadow in a Canvas that the system
-        // constructs from the dimensions passed to onProvideShadowMetrics().
         @Override
         public void onDrawShadow(Canvas canvas) {
-
-            // Draw the ColorDrawable on the Canvas passed in from the system.
             shadow.draw(canvas);
         }
-    }
-
-    private void log (String logMessage){
-        Log.d(TAG,logMessage);
     }
 
     private void setCellStatus(int cellValue){
@@ -440,5 +304,13 @@ public class HomeFragment extends Fragment {
                 pixelGridView.setSelectedItem(PixelGridView.CellValue.OBSTACLE);
                 break;
         }
+    }
+
+    private void dragNewObject(int type, View v, ImageView iv){
+        setCellStatus(type);
+        ClipData.Item item = new ClipData.Item((CharSequence) v.getTag());
+        ClipData dragData = new ClipData((CharSequence) v.getTag(), new String[] {ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
+        View.DragShadowBuilder myShadow = new MyDragShadowBuilder(iv, iv.getDrawable());
+        v.startDragAndDrop(dragData, myShadow, null,0);
     }
 }
