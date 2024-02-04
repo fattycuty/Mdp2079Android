@@ -33,16 +33,15 @@ import com.example.emptymdp.bluetooth.BluetoothConnectionService;
 public class HomeFragment extends Fragment {
 
     private final String TAG = "debugHomeFrag";
-    static TextView tvIncMsgs, tvRoboStatus;
+    static TextView tvIncMsgs, tvRoboStatus, tvSelectedObject;
     static StringBuilder messages = new StringBuilder();
-    Button btnSendMsg, btnClearMap, btnRotateCar, btnFastestPath, btnImageRecognition;
+    Button btnSendMsg, btnClearMap, btnFastestPath, btnImageRecognition, btnRotateSelected, btnClearSelected; //  btnRotateCar,
     EditText etSendMsg;
     BluetoothConnectionService btConnSvc;
     ImageButton btnTl,btnTr,btnBr,btnBl,btnUp,btnDown;
     RelativeLayout rlMap;
     PixelGridView pixelGridView;
     ImageView ivCar, ivObstacle;
-    TextView tvPlaceStatus;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -58,11 +57,7 @@ public class HomeFragment extends Fragment {
         getParentFragmentManager().setFragmentResultListener("homeFragKey", this, new FragmentResultListener() {
             @Override
             public void onFragmentResult(@NonNull String requestKey, @NonNull Bundle bundle) {
-                String message = bundle.getString("NORMAL_TEXT");
-                //Log.d(TAG, "onFragmentResult: fired "+message);
-                messages.append(message);
-                tvIncMsgs.setText(messages);
-
+                parseMessage(bundle);
             }
         });
 
@@ -78,12 +73,13 @@ public class HomeFragment extends Fragment {
         btnTr = getView().findViewById(R.id.btnTrArrow);
         ivCar = getView().findViewById(R.id.ivCar);
         ivObstacle = getView().findViewById(R.id.ivObstacle);
-        tvPlaceStatus = getView().findViewById(R.id.tvPlaceStatus);
         btnClearMap = getView().findViewById(R.id.btnClearMap);
-        btnRotateCar = getView().findViewById(R.id.btnRotateCar);
         tvRoboStatus = getView().findViewById(R.id.tvRoboStatus);
         btnFastestPath = getView().findViewById(R.id.btnFastestPath);
         btnImageRecognition = getView().findViewById(R.id.btnImageRecognition);
+        btnRotateSelected = getView().findViewById(R.id.btnRotateSelected);
+        tvSelectedObject = getView().findViewById(R.id.tvSelectedObject);
+        btnClearSelected = getView().findViewById(R.id.btnClearSelected);
 
         // ===================== setup ui elements =====================
 
@@ -107,16 +103,12 @@ public class HomeFragment extends Fragment {
         rlMap = getView().findViewById(R.id.rlMap);
         pixelGridView.setNumColumns(20);
         pixelGridView.setNumRows(20);
-        rlMap.addView(pixelGridView);  pixelGridView.setSelectedItem(PixelGridView.CellValue.EMPTY);
+
+
+        rlMap.addView(pixelGridView);
+        pixelGridView.setSelectedObject(PixelGridView.CellValue.EMPTY);
 
         // ===================== listeners =====================
-        btnRotateCar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                pixelGridView.rotateCar();
-            }
-        });
-
         btnClearMap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -133,17 +125,10 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        ivCar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setCellStatus(PixelGridView.CellValue.CAR);
-            }
-        });
-
         ivCar.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                dragNewObject(PixelGridView.CellValue.CAR,v,ivCar);
+                dragNewObject(v,ivCar);
                 return true;
             }
         });
@@ -222,22 +207,22 @@ public class HomeFragment extends Fragment {
         ivObstacle.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                dragNewObject(PixelGridView.CellValue.OBSTACLE,v,ivObstacle);
+                dragNewObject(v,ivObstacle);
                 return true;
             }
         });
 
-        ivObstacle.setOnClickListener(new View.OnClickListener() {
+        btnRotateSelected.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setCellStatus(PixelGridView.CellValue.OBSTACLE);
+                rotateSelected();
             }
         });
 
-        tvPlaceStatus.setOnClickListener(new View.OnClickListener() {
+        btnClearSelected.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setCellStatus(PixelGridView.CellValue.EMPTY);
+                pixelGridView.clearSelectedValues();
             }
         });
 
@@ -255,6 +240,7 @@ public class HomeFragment extends Fragment {
         if (btConnSvc == null) btConnSvc = BluetoothConnectionService.getInstance();
         if (btConnSvc.getState() != BluetoothConnectionService.STATE_CONNECTED){
             Toast.makeText(getContext(), "Device is not connected", Toast.LENGTH_SHORT).show();
+            appendFailedMessage(msg);
             return;
         }
         btConnSvc.sendMessage(msg);
@@ -289,28 +275,73 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void setCellStatus(int cellValue){
-        switch (cellValue){
-            case PixelGridView.CellValue.EMPTY:
-                tvPlaceStatus.setText("Placing: None");
-                pixelGridView.setSelectedItem(PixelGridView.CellValue.EMPTY);
-                break;
-            case PixelGridView.CellValue.CAR:
-                tvPlaceStatus.setText("Placing: Car");
-                pixelGridView.setSelectedItem(PixelGridView.CellValue.CAR);
-                break;
-            case PixelGridView.CellValue.OBSTACLE:
-                tvPlaceStatus.setText("Placing: Obstacle");
-                pixelGridView.setSelectedItem(PixelGridView.CellValue.OBSTACLE);
-                break;
-        }
-    }
-
-    private void dragNewObject(int type, View v, ImageView iv){
-        setCellStatus(type);
+    private void dragNewObject(View v, ImageView iv){
         ClipData.Item item = new ClipData.Item((CharSequence) v.getTag());
         ClipData dragData = new ClipData((CharSequence) v.getTag(), new String[] {ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
         View.DragShadowBuilder myShadow = new MyDragShadowBuilder(iv, iv.getDrawable());
         v.startDragAndDrop(dragData, myShadow, null,0);
     }
+
+    private void parseMessage(Bundle bundle){
+        String messageType, message;
+
+        String bundledMessage = bundle.getString("Message");
+        String deviceName = bundle.getString("Device Name");
+
+        if (bundledMessage.contains(":")){
+            messageType = bundledMessage.split(":")[0];
+            message = bundledMessage.split(":")[1];
+        } else {
+            messageType = "NORMAL_RECEIVED_TEXT";
+            message = bundledMessage;
+        }
+
+        switch (messageType){
+            case "SENT_TEXT":
+                message = "Me: "+message+"\n";
+                messages.append(message);
+                tvIncMsgs.setText(messages);
+                //pixelGridView.moveCarWithCommand(message);
+                break;
+            case "status":
+                message = "Status: "+message;
+                tvRoboStatus.setText(message);
+                break;
+            case "NORMAL_RECEIVED_TEXT":
+                // received normal text
+                message = deviceName+": "+message+"\n";
+                messages.append(message);
+                tvIncMsgs.setText(messages);
+                break;
+        }
+
+    }
+
+    public static void setTvSelectedObject(String selected){
+        selected = "Selected: "+selected;
+        tvSelectedObject.setText(selected);
+    }
+
+    private void rotateSelected(){
+        int selectedObject = pixelGridView.getSelectedObject();
+
+        switch (selectedObject){
+            case PixelGridView.CellValue.EMPTY:
+                Toast.makeText(getContext(), "Nothing is selected", Toast.LENGTH_SHORT).show();
+                break;
+            case PixelGridView.CellValue.CAR:
+                Log.d(TAG, "rotateSelected: rotating car");
+                pixelGridView.rotateCar();
+            case PixelGridView.CellValue.OBSTACLE:
+                Log.d(TAG, "rotateSelected: rotating obstacle");
+                pixelGridView.rotateObstacle(pixelGridView.getSelectedObstacle());
+        }
+    }
+
+    private void appendFailedMessage(String message){
+        message = "Me: "+message+" (unsent)\n";
+        messages.append(message);
+        tvIncMsgs.setText(messages);
+    }
+
 }

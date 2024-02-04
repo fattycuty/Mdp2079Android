@@ -465,7 +465,8 @@ public class BluetoothFragment extends Fragment {
                     // construct a string from the buffer
                     String writeMessage = new String(writeBuf);
                     //HomeFragment.getMessage("Me:  " + writeMessage+"\n");
-                    sendToHomeFrag("NORMAL_TEXT","Me:  " + writeMessage+"\n");
+                    writeMessage = "SENT_TEXT:"+writeMessage;
+                    sendToHomeFrag("Me",writeMessage);
                     break;
                 case BluetoothConnectionService.Constants.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
@@ -474,7 +475,7 @@ public class BluetoothFragment extends Fragment {
 
                     // handle message differently once we agree on the format
                     //HomeFragment.getMessage(mConnectedDeviceName + ":  " + readMessage+"\n");
-                    sendToHomeFrag("NORMAL_TEXT",mConnectedDeviceName + ":  " + readMessage+"\n");
+                    sendToHomeFrag(mConnectedDeviceName,readMessage);
                     break;
                 case BluetoothConnectionService.Constants.MESSAGE_DEVICE_NAME:
                     // save the connected device's name
@@ -503,9 +504,10 @@ public class BluetoothFragment extends Fragment {
         tvBtStatus.setTextColor(color);
     }
 
-    private void sendToHomeFrag(String key, String msg){
+    private void sendToHomeFrag(String deviceName, String msg){
         Bundle bundle = new Bundle();
-        bundle.putString(key, msg);
+        bundle.putString("Message", msg);
+        bundle.putString("Device Name",deviceName);
         getParentFragmentManager().setFragmentResult("homeFragKey", bundle);
     }
 

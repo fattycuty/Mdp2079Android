@@ -8,10 +8,14 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout2"
-        android:layout_width="371dp"
-        android:layout_height="269dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:layout_editor_absoluteY="0dp">
+        android:layout_width="348dp"
+        android:layout_height="316dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/constraintLayout"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/rlMap"
+        app:layout_constraintVertical_bias="0.476">
 
         <ImageButton
             android:id="@+id/btnBlArrow"
@@ -63,9 +67,9 @@
 
         <ImageView
             android:id="@+id/ivCar"
-            android:layout_width="47dp"
-            android:layout_height="50dp"
-            android:layout_marginStart="20dp"
+            android:layout_width="37dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="4dp"
             android:src="@drawable/ic_car_up"
             app:layout_constraintStart_toEndOf="@+id/tvCarObject"
             app:layout_constraintTop_toTopOf="parent" />
@@ -91,75 +95,86 @@
 
         <ImageView
             android:id="@+id/ivObstacle"
-            android:layout_width="48dp"
-            android:layout_height="47dp"
-            android:layout_marginStart="20dp"
+            android:layout_width="45dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="4dp"
             android:src="@drawable/ic_obstacle"
             app:layout_constraintStart_toEndOf="@+id/tvObstacle"
             app:layout_constraintTop_toTopOf="@+id/tvObstacle" />
-
-        <TextView
-            android:id="@+id/tvPlaceStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_marginTop="20dp"
-            android:text="Placing: None"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvObstacle" />
 
         <Button
             android:id="@+id/btnClearMap"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="72dp"
+            android:layout_marginTop="16dp"
             android:text="Clear Map"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
-            android:id="@+id/btnRotateCar"
+        <TextView
+            android:id="@+id/tvSelectedObject"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Rotate Car"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btnClearMap" />
+            android:layout_marginTop="20dp"
+            android:text="Selected: None"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvObstacle" />
+
+        <Button
+            android:id="@+id/btnRotateSelected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rotate Selected Object"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvSelectedObject" />
+
+        <Button
+            android:id="@+id/btnClearSelected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Clear Selected Object"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btnRotateSelected" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout"
-        android:layout_width="367dp"
-        android:layout_height="410dp"
+        android:layout_width="258dp"
+        android:layout_height="343dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/constraintLayout2"
+        app:layout_constraintTop_toBottomOf="@+id/rlMap"
+        app:layout_constraintVertical_bias="0.476">
 
         <EditText
             android:id="@+id/etSendMsg"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:hint="Enter Message Here"
-            app:layout_constraintBottom_toTopOf="@+id/llReceiveMsg"
             app:layout_constraintEnd_toStartOf="@+id/btnSendMsg"
             app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <Button
             android:id="@+id/btnSendMsg"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Send"
-            app:layout_constraintBottom_toTopOf="@+id/llReceiveMsg"
-            app:layout_constraintStart_toEndOf="@+id/etSendMsg" />
+            app:layout_constraintStart_toEndOf="@+id/etSendMsg"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ScrollView
             android:id="@+id/llReceiveMsg"
-            android:layout_width="330dp"
-            android:layout_height="348dp"
+            android:layout_width="257dp"
+            android:layout_height="294dp"
             android:orientation="vertical"
             android:scrollbars="vertical"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/etSendMsg">
 
             <TextView
                 android:id="@+id/tvIncMsgs"
@@ -173,14 +188,14 @@
 
     <RelativeLayout
         android:id="@+id/rlMap"
-        android:layout_width="654dp"
-        android:layout_height="602dp"
+        android:layout_width="640dp"
+        android:layout_height="640dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/constraintLayout2"
-        app:layout_constraintHorizontal_bias="0.096"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.495"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.146">
+        app:layout_constraintVertical_bias="0.032">
 
     </RelativeLayout>
 
@@ -188,35 +203,40 @@
         android:id="@+id/tvRoboStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="72dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="256dp"
         android:text="Status: None"
-        app:layout_constraintEnd_toStartOf="@+id/constraintLayout2"
-        app:layout_constraintHorizontal_bias="0.202"
-        app:layout_constraintStart_toEndOf="@+id/rlMap"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/btnFastestPath"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="44dp"
-        android:text="Fastest Path"
-        app:layout_constraintEnd_toStartOf="@+id/constraintLayout2"
-        app:layout_constraintHorizontal_bias="0.644"
-        app:layout_constraintStart_toEndOf="@+id/rlMap"
-        app:layout_constraintTop_toBottomOf="@+id/tvRoboStatus" />
+        app:layout_constraintBottom_toTopOf="@+id/constraintLayout2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/btnImageRecognition"
+        app:layout_constraintTop_toBottomOf="@+id/rlMap"
+        app:layout_constraintVertical_bias="0.591" />
 
     <Button
         android:id="@+id/btnImageRecognition"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
         android:text="Image Recognition"
         android:textSize="10dp"
-        app:layout_constraintEnd_toStartOf="@+id/constraintLayout"
-        app:layout_constraintHorizontal_bias="0.636"
-        app:layout_constraintStart_toEndOf="@+id/rlMap"
-        app:layout_constraintTop_toBottomOf="@+id/btnFastestPath" />
+        app:layout_constraintBottom_toTopOf="@+id/constraintLayout2"
+        app:layout_constraintEnd_toStartOf="@+id/tvRoboStatus"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/btnFastestPath"
+        app:layout_constraintTop_toBottomOf="@+id/rlMap"
+        app:layout_constraintVertical_bias="0.709" />
+
+    <Button
+        android:id="@+id/btnFastestPath"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Fastest Path"
+        app:layout_constraintBottom_toTopOf="@+id/constraintLayout2"
+        app:layout_constraintEnd_toStartOf="@+id/btnImageRecognition"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/rlMap"
+        app:layout_constraintVertical_bias="0.709" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
