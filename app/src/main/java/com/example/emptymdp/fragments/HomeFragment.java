@@ -12,9 +12,11 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentResultListener;
 
-import android.util.Log;
+import android.view.ContextMenu;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -35,7 +37,8 @@ public class HomeFragment extends Fragment {
     private final String TAG = "debugHomeFrag";
     static TextView tvIncMsgs, tvRoboStatus, tvSelectedObject;
     static StringBuilder messages = new StringBuilder();
-    Button btnSendMsg, btnClearMap, btnFastestPath, btnImageRecognition, btnRotateSelected, btnClearSelected; //  btnRotateCar,
+    Button btnSendMsg, btnClearMap, btnFastestPath, btnImageRecognition,
+            btnClearRobotCar, btnClearObstacles, btnArenaInfo;
     EditText etSendMsg;
     BluetoothConnectionService btConnSvc;
     ImageButton btnTl,btnTr,btnBr,btnBl,btnUp,btnDown;
@@ -77,9 +80,10 @@ public class HomeFragment extends Fragment {
         tvRoboStatus = getView().findViewById(R.id.tvRoboStatus);
         btnFastestPath = getView().findViewById(R.id.btnFastestPath);
         btnImageRecognition = getView().findViewById(R.id.btnImageRecognition);
-        btnRotateSelected = getView().findViewById(R.id.btnRotateSelected);
         tvSelectedObject = getView().findViewById(R.id.tvSelectedObject);
-        btnClearSelected = getView().findViewById(R.id.btnClearSelected);
+        btnClearObstacles = getView().findViewById(R.id.btnClearObstacles);
+        btnClearRobotCar = getView().findViewById(R.id.btnClearRobotCar);
+        btnArenaInfo = getView().findViewById(R.id.btnArenaInfo);
 
         // ===================== setup ui elements =====================
 
@@ -90,21 +94,23 @@ public class HomeFragment extends Fragment {
         // chat box
         tvIncMsgs.setText(messages);
 
-        // btn movements
+        // btn cmds
         manualMovement(btnUp, "f");
         manualMovement(btnDown,"r");
         manualMovement(btnTl,"tl");
         manualMovement(btnTr,"tr");
         manualMovement(btnBl,"sl");
         manualMovement(btnBr,"sr");
+        buttonCmd(btnFastestPath,"beginFastest");
+        buttonCmd(btnImageRecognition,"beginExplore");
+        buttonCmd(btnArenaInfo,"sendArena");
 
         // grid map
-        pixelGridView = new PixelGridView(getContext());
         rlMap = getView().findViewById(R.id.rlMap);
+        pixelGridView = new PixelGridView(getContext());
+        registerForContextMenu(pixelGridView);
         pixelGridView.setNumColumns(20);
         pixelGridView.setNumRows(20);
-
-
         rlMap.addView(pixelGridView);
         pixelGridView.setSelectedObject(PixelGridView.CellValue.EMPTY);
 
@@ -212,22 +218,51 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        btnRotateSelected.setOnClickListener(new View.OnClickListener() {
+        btnClearRobotCar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                rotateSelected();
+                pixelGridView.clearCar(true);
             }
         });
 
-        btnClearSelected.setOnClickListener(new View.OnClickListener() {
+        btnClearObstacles.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                pixelGridView.clearSelectedValues();
+                pixelGridView.removeAllObstacles();
             }
         });
-
     }
-    public void manualMovement(ImageButton ib, String direction){
+
+    @Override
+    public void onCreateContextMenu(@NonNull ContextMenu menu, @NonNull View v, @Nullable ContextMenu.ContextMenuInfo menuInfo) {
+        // to inflate object context menu
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getActivity().getMenuInflater();
+        inflater.inflate(R.menu.obstacle_context_menu,menu);
+    }
+
+    @Override
+    public boolean onContextItemSelected(@NonNull MenuItem item) {
+        // obstacle context menu
+        int itemId = item.getItemId();
+
+        if (itemId == R.id.miSetNorth) {
+            pixelGridView.setDirectionFromContextMenu(PixelGridView.Direction.NORTH);
+            return true;
+        } else if (itemId == R.id.miSetEast) {
+            pixelGridView.setDirectionFromContextMenu(PixelGridView.Direction.EAST);
+            return true;
+        } else if (itemId == R.id.miSetSouth) {
+            pixelGridView.setDirectionFromContextMenu(PixelGridView.Direction.SOUTH);
+            return true;
+        } else if (itemId == R.id.miSetWest) {
+            pixelGridView.setDirectionFromContextMenu(PixelGridView.Direction.WEST);
+            return true;
+        }
+        return super.onContextItemSelected(item);
+    }
+
+    private void manualMovement(ImageButton ib, String direction){
         ib.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -236,7 +271,16 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    public void sendMessage(String msg){
+    private void buttonCmd(Button button, String command){
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendMessage(command);
+            }
+        });
+    }
+
+    private void sendMessage(String msg){
         if (btConnSvc == null) btConnSvc = BluetoothConnectionService.getInstance();
         if (btConnSvc.getState() != BluetoothConnectionService.STATE_CONNECTED){
             Toast.makeText(getContext(), "Device is not connected", Toast.LENGTH_SHORT).show();
@@ -301,11 +345,41 @@ public class HomeFragment extends Fragment {
                 message = "Me: "+message+"\n";
                 messages.append(message);
                 tvIncMsgs.setText(messages);
-                //pixelGridView.moveCarWithCommand(message);
+                pixelGridView.moveCarWithCommand(message);
                 break;
             case "status":
                 message = "Status: "+message;
                 tvRoboStatus.setText(message);
+                break;
+            case "ROBOT":
+                int row = Integer.parseInt(message.split(",")[0]);
+                int col = Integer.parseInt(message.split(",")[1]);
+
+                String sDirection = message.split(",")[2];
+                int direction;
+                switch (sDirection){
+                    case "N":
+                        direction = PixelGridView.Direction.NORTH;
+                        break;
+                    case "E":
+                        direction = PixelGridView.Direction.EAST;
+                        break;
+                    case "S":
+                        direction = PixelGridView.Direction.SOUTH;
+                        break;
+                    case "W":
+                        direction = PixelGridView.Direction.WEST;
+                        break;
+                    default:
+                        direction = PixelGridView.Direction.NORTH;
+                        break;
+                }
+
+                pixelGridView.receiveRobotCoords(row,col,direction);
+
+                message = deviceName+": ROBOT("+message+")\n";
+                messages.append(message);
+                tvIncMsgs.setText(messages);
                 break;
             case "NORMAL_RECEIVED_TEXT":
                 // received normal text
@@ -322,23 +396,7 @@ public class HomeFragment extends Fragment {
         tvSelectedObject.setText(selected);
     }
 
-    private void rotateSelected(){
-        int selectedObject = pixelGridView.getSelectedObject();
-
-        switch (selectedObject){
-            case PixelGridView.CellValue.EMPTY:
-                Toast.makeText(getContext(), "Nothing is selected", Toast.LENGTH_SHORT).show();
-                break;
-            case PixelGridView.CellValue.CAR:
-                Log.d(TAG, "rotateSelected: rotating car");
-                pixelGridView.rotateCar();
-            case PixelGridView.CellValue.OBSTACLE:
-                Log.d(TAG, "rotateSelected: rotating obstacle");
-                pixelGridView.rotateObstacle(pixelGridView.getSelectedObstacle());
-        }
-    }
-
-    private void appendFailedMessage(String message){
+    public static void appendFailedMessage(String message){
         message = "Me: "+message+" (unsent)\n";
         messages.append(message);
         tvIncMsgs.setText(messages);

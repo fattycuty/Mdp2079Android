@@ -1,11 +1,12 @@
 package com.example.emptymdp.arena;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class ArenaProperty {
     private int numRows, numColumns;
     private ArrayList<Obstacle> obstacleArrayList;
-    private RoboCar roboCar;
+    private RobotCar robotCar;
     private int[][] matrixBoard;
 
     public ArenaProperty() {
@@ -17,7 +18,6 @@ public class ArenaProperty {
         this.numColumns = numColumns;
         matrixBoard = new int[numRows][numColumns];
     }
-
 
     public int getNumColumns() {
         return numColumns;
@@ -43,17 +43,30 @@ public class ArenaProperty {
         this.obstacleArrayList = obstacleArrayList;
     }
 
-    public RoboCar getRoboCar() {
-        return roboCar;
+    public Obstacle getObstacle(int row, int col){
+        for (Obstacle obstacle:getObstacleArrayList()){
+            if (obstacle.getRow()==row && obstacle.getCol()==col) return obstacle;
+        }
+        return null;
     }
 
-    public void setRoboCar(RoboCar roboCar) {
-        this.roboCar = roboCar;
+    public RobotCar getRobotCar() {
+        return robotCar;
     }
 
-    public void addRoboCar(RoboCar roboCar){
-        this.roboCar = roboCar;
-        matrixBoard[roboCar.getRow()][roboCar.getCol()] = PixelGridView.CellValue.CAR;
+    public void setRobotCar(RobotCar robotCar) {
+        this.robotCar = robotCar;
+    }
+
+    public void addRobotCar(RobotCar robotCar){
+        this.robotCar = robotCar;
+
+        int[] rowCol;
+        HashMap<Integer, int[]> rowColMap = robotCar.getRowColMap();
+        for (int i=0;i<rowColMap.size();i++){
+            rowCol = rowColMap.get(i);
+            matrixBoard[rowCol[0]][rowCol[1]] = PixelGridView.CellValue.CAR;
+        }
     }
 
     public void addObstacle(Obstacle obstacle){

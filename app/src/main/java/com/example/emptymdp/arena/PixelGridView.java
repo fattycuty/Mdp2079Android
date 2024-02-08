@@ -18,10 +18,15 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.example.emptymdp.R;
+import com.example.emptymdp.bluetooth.BluetoothConnectionService;
 import com.example.emptymdp.fragments.HomeFragment;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class PixelGridView extends View {
     private final String TAG = "debugMap";
@@ -29,7 +34,8 @@ public class PixelGridView extends View {
     private int cellWidth, cellHeight;
     private Paint pObstacle = new Paint();
     private Paint pObstacleDirection = new Paint();
-    private Paint pAlphaNum = new Paint();
+    private Paint pAlphaNumSmall = new Paint();
+    private Paint pAlphaNumBig = new Paint();
     private Paint pCar1 = new Paint();
     private Paint pCar2 = new Paint();
     private Paint pBorder = new Paint();
@@ -39,6 +45,8 @@ public class PixelGridView extends View {
     Bitmap bmCar;
     private ArenaProperty arena;
     private int numOfObstacles = 0;
+    private BluetoothConnectionService btConnSvc;
+    GestureDetector gestureDetector;
 
     public interface CellValue {
         int EMPTY = 0;
@@ -59,18 +67,29 @@ public class PixelGridView extends View {
     public PixelGridView(Context context) {
         this(context, null);
     }
-
+    
     public PixelGridView(Context context, AttributeSet attrs) {
         super(context, attrs);
+
+        // touch events
+        gestureDetector = new GestureDetector(context, new GestureListener());
+
+        // paints
         pBorder.setColor(Color.BLACK);
-        pAlphaNum.setColor(Color.BLACK);
+        pAlphaNumSmall.setColor(Color.BLACK);
+        pAlphaNumBig.setColor(Color.BLACK);
+        pAlphaNumBig.setTextSize(24F);
         pCar1.setColor(Color.RED);
         pCar2.setColor(Color.GRAY);
         pObstacle.setColor(Color.YELLOW);
         pObstacleDirection.setColor(Color.RED);
         pSelectedBorder.setColor(Color.BLACK);
         pSelectedBorder.setStrokeWidth(3.0F);
+
+        // car image
         bmCar = BitmapFactory.decodeResource(getResources(), R.drawable.ic_car_up);
+
+        // create arena
         arena = new ArenaProperty();
     }
 
@@ -115,7 +134,7 @@ public class PixelGridView extends View {
     protected void onDraw(Canvas canvas) {
         canvas.drawColor(Color.CYAN);
 
-        Obstacle obstacle;
+        boolean placedCar = false;
 
         if (numColumns == 0 || numRows == 0) {
             return;
@@ -125,37 +144,16 @@ public class PixelGridView extends View {
 
         for (int row = 0; row < numRows; row++) {
             for (int col = 0; col < numColumns; col++) {
+                //canvas.drawText("r"+row+",c"+col,(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2,pAlphaNum);
+
                 if (matrixBoard[row][col] == CellValue.OBSTACLE) {
+                    drawObstacle(canvas,row,col);
 
-                    obstacle = getObstacle(row,col);
-
-                    // draw obstacle
-                    canvas.drawRect(row * cellWidth, col * cellHeight,
-                            (row + 1) * cellWidth, (col + 1) * cellHeight,
-                            pObstacle);
-
-                    // draw obstacle direction
-                    RectF rectF = getObstacleDirectionRectF(obstacle);
-                    canvas.drawRect(rectF, pObstacleDirection);
-
-                    // draw obstacle number
-                    canvas.drawText(Integer.toString(obstacle.getObstacleId()),(2 * row + 1)*cellWidth/2,(2 * col + 1)*cellHeight/2,pAlphaNum);
-
-                    // draw selected outline
-                    if (selectedObject == CellValue.OBSTACLE && selectedObstacle.getObstacleId() == obstacle.getObstacleId()){
-                        drawSelectedBorder(canvas, row * cellWidth, col * cellHeight, (row + 1) * cellWidth, (col + 1) * cellHeight);
-                    }
-
-                } else if (matrixBoard[row][col] == CellValue.CAR) {
-                    // draw car
-                    RectF rect = new RectF((row-1) * cellWidth, (col-1) * cellHeight,(row + 2) * cellWidth, (col + 2) * cellHeight);
-                    canvas.drawBitmap(bmCar, null, rect, null);
-
-                    // draw selected outline
-                    if (selectedObject == CellValue.CAR){
-                        drawSelectedBorder(canvas, (row-1) * cellWidth, (col-1) * cellHeight,(row + 2) * cellWidth, (col + 2) * cellHeight);
-                    }
+                } else if (matrixBoard[row][col] == CellValue.CAR && !placedCar) {
+                    drawCar(canvas,row,col);
+                    placedCar = true;
                 }
+
             }
         }
 
@@ -173,52 +171,53 @@ public class PixelGridView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) throws ArrayIndexOutOfBoundsException{
-        float touchX = event.getX();
-        float touchY = event.getY();
-        int row = (int)(touchX / cellWidth);
-        int col = (int)(touchY / cellHeight);
+        return gestureDetector.onTouchEvent(event);
+    }
 
-        if (row>=numRows || col>=numColumns) return true;
+    private class GestureListener extends GestureDetector.SimpleOnGestureListener {
+        private int col, row, curObj;
+        @Override
+        public void onLongPress(@NonNull MotionEvent e) throws ArrayIndexOutOfBoundsException {
+            super.onLongPress(e);
+            if (curObj != CellValue.EMPTY)
+                dragCellObject(row, col, curObj);
 
-        int curObj = arena.getMatrixBoard()[row][col];
-
-        switch(event.getAction()){
-            case MotionEvent.ACTION_DOWN:
-                final GestureDetector gestureDetector = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
-                    public void onLongPress(MotionEvent e) {
-                        Log.d(TAG, "onLongPress: on touch event fired");
-                        dragCellObject(row,col,curObj);
-                    }
-                });
-
-                if (curObj == CellValue.OBSTACLE){
-                    Log.d(TAG, "onTouchEvent: selected obstacle");
-                    selectedObject = CellValue.OBSTACLE;
-                    selectedObstacle = getObstacle(row,col);
-                    HomeFragment.setTvSelectedObject("Obstacle "+selectedObstacle.getObstacleId());
-
-                } else if (curObj == CellValue.CAR){
-                    Log.d(TAG, "onTouchEvent: selected car");
-                    selectedObject = CellValue.CAR;
-                    selectedObstacle = null;
-                    HomeFragment.setTvSelectedObject("RoboCar");
-                }
-
-                invalidate();
-
-                if (curObj != CellValue.EMPTY){
-                    return gestureDetector.onTouchEvent(event);
-                }
-
-                break;
-            case MotionEvent.ACTION_MOVE:
-                //Log.d(TAG, "onTouchEvent: action move");
-                break;
-            case MotionEvent.ACTION_UP:
-                //Log.d(TAG, "onTouchEvent: action up");
-                break;
         }
-        return true;
+
+        @Override
+        public boolean onDown(MotionEvent e) throws ArrayIndexOutOfBoundsException {
+            col = (int)(e.getX() / cellWidth);
+            row = (int)(e.getY() / cellHeight);
+
+            if (row>=numRows || col>=numColumns) return false;
+
+            curObj = arena.getMatrixBoard()[row][col];
+
+            if (curObj == CellValue.OBSTACLE){
+                //Log.d(TAG, "onDown: selected obstacle");
+                setSelectedObject(CellValue.OBSTACLE, arena.getObstacle(row,col));
+
+            } else if (curObj == CellValue.CAR){
+                //Log.d(TAG, "onDown: selected car");
+                setSelectedObject(CellValue.CAR,null);
+
+            } else if (curObj == CellValue.EMPTY){
+                //Log.d(TAG, "onDown: selected empty cell");
+                setSelectedObject(CellValue.EMPTY,null);
+            }
+
+            return true;
+        }
+
+        @Override
+        public boolean onDoubleTap(MotionEvent e) throws ArrayIndexOutOfBoundsException{
+            Log.d(TAG, "onDoubleTap: "+curObj);
+
+            if (curObj!=CellValue.EMPTY)
+                showContextMenu(e.getX(), e.getY());
+
+            return true;
+        }
     }
 
     public void receiveOnDrag(DragEvent dragEvent, float x, float y){
@@ -252,7 +251,7 @@ public class PixelGridView extends View {
             if (object instanceof Obstacle){
                 type = CellValue.MOVE_OBSTACLE;
                 moveCell(type,x,y, dragEvent.getLocalState());
-            } else if (object instanceof RoboCar){
+            } else if (object instanceof RobotCar){
                 type = CellValue.MOVE_CAR;
                 moveCell(type,x,y, dragEvent.getLocalState());
             }
@@ -260,8 +259,8 @@ public class PixelGridView extends View {
     }
 
     private void newCell(int type, float x, float y) throws ArrayIndexOutOfBoundsException {
-        int row = (int)(x / cellWidth);
-        int col = (int)(y / cellHeight);
+        int col = (int)(x / cellWidth);
+        int row = (int)(y / cellHeight);
 //        Log.d(TAG, "newCell: (x,y): "+x+" "+y);
 //        Log.d(TAG, "newCell: (row,col): " +row+" "+col);
         boolean check;
@@ -269,52 +268,55 @@ public class PixelGridView extends View {
         switch (type){
             case CellValue.CAR:
                 // same code as move cell car
-                check = legalNewBoundary(x,y,CellValue.CAR);
+                check = legalPlacementBoundary(x,y,CellValue.CAR, 0, 0);
                 if (!check){
                     Toast.makeText(getContext(), "Cannot place car here", Toast.LENGTH_SHORT).show();
                     break;
                 }
-                clearCar();
-                RoboCar roboCar = new RoboCar(x,y,row,col);
-                arena.addRoboCar(roboCar);
+                clearCar(false);
+                RobotCar robotCar = new RobotCar(x,y,row,col, Direction.NORTH);
+                arena.addRobotCar(robotCar);
                 break;
             case CellValue.OBSTACLE:
-                check = legalNewBoundary(x,y, CellValue.OBSTACLE);
+                check = legalPlacementBoundary(x,y, CellValue.OBSTACLE,0,0);
                 if (!check){
                     Toast.makeText(getContext(), "Cannot place obstacle here", Toast.LENGTH_SHORT).show();
                     break;
                 }
-                Obstacle obstacle = new Obstacle(x,y,row,col,++numOfObstacles);
+                Obstacle obstacle = new Obstacle(x,y,row,col,++numOfObstacles, false);
                 arena.addObstacle(obstacle);
+                sendObstacleChanges(obstacle);
                 break;
         }
+        
         invalidate();
         
     }
 
     private void moveCell(int type, float x, float y, Object object) throws ArrayIndexOutOfBoundsException {
-        int row = (int)(x / cellWidth);
-        int col = (int)(y / cellHeight);
+        int col = (int)(x / cellWidth);
+        int row = (int)(y / cellHeight);
         boolean check;
 
         switch (type){
             case CellValue.MOVE_CAR:
 
                 if (x==-1 && y==-1){
-                    clearCar();
-                    Toast.makeText(getContext(), "Removed car", Toast.LENGTH_SHORT).show();
+                    clearCar(true);
+                    clearSelectedObject();
                     break;
                 }
 
                 // same code as new cell car
-                check = legalMoveBoundary(x,y,CellValue.MOVE_CAR);
+                check = legalPlacementBoundary(x,y,CellValue.MOVE_CAR,0,0);
                 if (!check){
                     Toast.makeText(getContext(), "Cannot move car here", Toast.LENGTH_SHORT).show();
                     break;
                 }
-                clearCar();
-                RoboCar roboCar = new RoboCar(x,y,row,col);
-                arena.addRoboCar(roboCar);
+                int direction = arena.getRobotCar().getDirection();
+                clearCar(false);
+                RobotCar robotCar = new RobotCar(x,y,row,col,direction);
+                arena.addRobotCar(robotCar);
                 break;
 
             case CellValue.MOVE_OBSTACLE:
@@ -325,78 +327,57 @@ public class PixelGridView extends View {
                 int oldRow = Integer.parseInt(sOldRow);
                 int oldCol = Integer.parseInt(sOldCol);
 
+                int obstacleId = arena.getObstacle(oldRow,oldCol).getObstacleId();
+
                 if (x==-1 && y==-1){
-                    if (selectedObject == CellValue.OBSTACLE && selectedObstacle.getObstacleId()==getObstacle(oldRow,oldCol).getObstacleId()){
-                        selectedObject = CellValue.EMPTY;
-                        selectedObstacle = null;
-                    }
+                    clearSelectedObject();
                     removeObstacle(oldRow,oldCol);
-                    Toast.makeText(getContext(), "Removed obstacle", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Removed Obstacle "+obstacleId, Toast.LENGTH_SHORT).show();
                     break;
                 }
 
-                check = legalMoveBoundary(x,y, CellValue.MOVE_OBSTACLE);
+                check = legalPlacementBoundary(x,y, CellValue.MOVE_OBSTACLE,0,0);
                 if (!check){
                     Toast.makeText(getContext(), "Cannot move obstacle here", Toast.LENGTH_SHORT).show();
                     break;
                 }
 
                 updateObstacleLocation(oldRow,oldCol,row,col);
+                sendObstacleChanges(obstacle);
+
                 break;
         }
         invalidate();
     }
 
-    private boolean legalNewBoundary(float x, float y, int type) {
-        int row = (int)(x / cellWidth);
-        int column = (int)(y / cellHeight);
-        int[][] matrixArena = arena.getMatrixBoard();
-
-        try {
-            for (int r=row-1;r<row+2;r++){
-                for (int c=column-1;c<column+2;c++){
-                    switch(type){
-                        case CellValue.OBSTACLE:
-                            if (r<0 || c<0 || c>=numColumns-1 || r>=numRows) continue;
-                            if (matrixArena[r][c] == CellValue.CAR) return false;
-                            break;
-                        case CellValue.CAR:
-                            if (matrixArena[r][c] == CellValue.OBSTACLE) return false;
-                            break;
-                    }
-
-                }
-            }
-        } catch (ArrayIndexOutOfBoundsException e){
-            Log.e(TAG, "legalNewBoundary: ", e);
-            return false;
+    private boolean legalPlacementBoundary(float x, float y, int type, int row, int col) {
+        // use row and col argument only if x and y is 0.0F (null)
+        if (x==0.0F && y==0.0F) {
+            if (col < 0 || row < 0 || col >= getNumColumns() || row >= getNumRows()) return false;
+        } else {
+            col = (int)(x / cellWidth);
+            row = (int)(y / cellHeight);
         }
 
-        return true;
-    }
-
-    private boolean legalMoveBoundary(float x, float y, int type) {
-        int row = (int)(x / cellWidth);
-        int column = (int)(y / cellHeight);
         int[][] matrixArena = arena.getMatrixBoard();
-
         try {
-            for (int r=row-1;r<row+2;r++){
-                for (int c=column-1;c<column+2;c++){
-                    switch(type){
-                        case CellValue.MOVE_OBSTACLE:
-                            if (r<0 || c<0 || c>=numColumns-1 || r>=numRows) continue;
-                            if (matrixArena[r][c] == CellValue.CAR) return false;
-                            break;
-                        case CellValue.MOVE_CAR:
+            switch(type){
+                case CellValue.OBSTACLE:
+                case CellValue.MOVE_OBSTACLE:
+                    if (matrixArena[row][col] != CellValue.EMPTY) return false;
+                    break;
+                case CellValue.CAR:
+                case CellValue.MOVE_CAR:
+                    for (int r=row;r<row+2;r++){
+                        for (int c=col;c<col+2;c++){
                             if (matrixArena[r][c] == CellValue.OBSTACLE) return false;
-                            break;
+                        }
                     }
-
-                }
+                    break;
             }
+
         } catch (ArrayIndexOutOfBoundsException e){
-            Log.e(TAG, "legalNewBoundary: ", e);
+            Log.e(TAG, "legalPlacementBoundary: ", e);
             return false;
         }
 
@@ -408,42 +389,68 @@ public class PixelGridView extends View {
         arena.setArena(numRows,numColumns);
         numOfObstacles = 0;
         clearSelectedValues();
+
+        Toast.makeText(getContext(), "Cleared the map", Toast.LENGTH_SHORT).show();
+        
         invalidate();
     }
 
-    private void clearCar(){
-        RoboCar roboCar = arena.getRoboCar();
+    public void clearCar(boolean displayToast){
+        RobotCar robotCar = arena.getRobotCar();
 
-        if (roboCar==null) return;
+        if (displayToast) Toast.makeText(getContext(), "Removed RobotCar", Toast.LENGTH_SHORT).show();
+
+        if (robotCar ==null) return;
 
         int[][] matrixBoard = arena.getMatrixBoard();
-        matrixBoard[roboCar.getRow()][roboCar.getCol()] = CellValue.EMPTY;
-        arena.setRoboCar(null);
+
+        int[] rowCol;
+        HashMap<Integer, int[]> rowColMap = robotCar.getRowColMap();
+        for (int i=0;i<rowColMap.size();i++){
+            rowCol = rowColMap.get(i);
+            matrixBoard[rowCol[0]][rowCol[1]] = CellValue.EMPTY;
+        }
+
+        arena.setRobotCar(null);
+        
         invalidate();
+    }
+
+    private void clearSelectedObject(){
+        selectedObstacle = null;
+        selectedObject = CellValue.EMPTY;
+        HomeFragment.setTvSelectedObject("None");
     }
 
     private void removeObstacle(int row, int col){
-        Obstacle obstacle = getObstacle(row,col);
+        Obstacle obstacle = arena.getObstacle(row,col);
 
         if (obstacle==null) return;
 
         arena.getObstacleArrayList().remove(obstacle);
         arena.getMatrixBoard()[row][col] = CellValue.EMPTY;
 
+        //Toast.makeText(getContext(), "Removed Obstacle "+obstacle.getObstacleId(), Toast.LENGTH_SHORT).show();
+
         invalidate();
     }
 
-    private void removeAllObstacles(){
+    public void removeAllObstacles(){
         for (Obstacle obstacle:arena.getObstacleArrayList()){
             arena.getMatrixBoard()[obstacle.getRow()][obstacle.getCol()] = CellValue.EMPTY;
             break;
         }
         arena.setObstacleArrayList(new ArrayList<>());
+
+        clearSelectedObject();
+
+        Toast.makeText(getContext(), "Removed all obstacles", Toast.LENGTH_SHORT).show();
+        
         invalidate();
     }
 
     private void updateObstacleLocation(int oldRow, int oldCol, int newRow, int newCol){
-        Obstacle obstacle = getObstacle(oldRow,oldCol);
+        Obstacle obstacle = arena.getObstacle(oldRow,oldCol);
 
         if (obstacle==null) return;
 
@@ -452,49 +459,6 @@ public class PixelGridView extends View {
         arena.getMatrixBoard()[oldRow][oldCol] = CellValue.EMPTY;
         arena.getMatrixBoard()[newRow][newCol] = CellValue.OBSTACLE;
 
-        invalidate();
-    }
-
-    public void rotateObstacle(Obstacle obstacle){
-        if (obstacle==null) return;
-
-        switch (obstacle.getDirection()){
-            case Direction.NORTH:
-                obstacle.setDirection(Direction.EAST);
-                break;
-            case Direction.EAST:
-                obstacle.setDirection(Direction.SOUTH);
-                break;
-            case Direction.SOUTH:
-                obstacle.setDirection(Direction.WEST);
-                break;
-            case Direction.WEST:
-                obstacle.setDirection(Direction.NORTH);
-                break;
-        }
-        invalidate();
-    }
-
-    public void rotateCar(){
-        RoboCar roboCar = arena.getRoboCar();
-
-        switch (roboCar.getDirection()){
-            case Direction.NORTH:
-                roboCar.setDirection(Direction.EAST);
-                break;
-            case Direction.EAST:
-                roboCar.setDirection(Direction.SOUTH);
-                break;
-            case Direction.SOUTH:
-                roboCar.setDirection(Direction.WEST);
-                break;
-            case Direction.WEST:
-                roboCar.setDirection(Direction.NORTH);
-                break;
-        }
-        Matrix matrix = new Matrix();
-        matrix.postRotate(90);
-        bmCar = Bitmap.createBitmap(bmCar,0,0,bmCar.getWidth(),bmCar.getHeight(),matrix,true);
         invalidate();
     }
 
@@ -510,18 +474,20 @@ public class PixelGridView extends View {
         switch(curObj){
 
             case CellValue.OBSTACLE:
-                Obstacle curObstacle = getObstacle(row,col);
+                Obstacle curObstacle = arena.getObstacle(row,col);
                 item = new ClipData.Item("MOVE_OBSTACLE");
                 dragData = new ClipData("MOVE_OBSTACLE", new String[] {ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
                 myShadow = new HomeFragment.MyDragShadowBuilder(v, getResources().getDrawable(R.drawable.ic_obstacle, getContext().getTheme()));
                 v.startDragAndDrop(dragData, myShadow, curObstacle,0);
+                //Log.d(TAG, "dragCellObject: dragging obstacle "+curObstacle.getObstacleId());
                 break;
 
             case CellValue.CAR:
                 item = new ClipData.Item("MOVE_CAR");
-                dragData = new ClipData("MOVE_OBSTACLE", new String[] {ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
+                dragData = new ClipData("MOVE_CAR", new String[] {ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
                 myShadow  = new HomeFragment.MyDragShadowBuilder(v, getResources().getDrawable(R.drawable.ic_car_up, getContext().getTheme()));
-                v.startDragAndDrop(dragData, myShadow, arena.getRoboCar(),0);
+                v.startDragAndDrop(dragData, myShadow, arena.getRobotCar(),0);
+                //Log.d(TAG, "dragCellObject: dragging robot car");
                 break;
         }
 
@@ -538,43 +504,36 @@ public class PixelGridView extends View {
 
         switch(direction){
             case Direction.NORTH:
-                left = row * cellWidth;
-                top = col * cellHeight;
-                right = (row + 1) * cellWidth;
-                bottom = (float) ((col + 0.2) * cellHeight);
+                left = col * cellWidth;
+                top = row * cellHeight;
+                right = (col + 1) * cellWidth;
+                bottom = (row + 0.2F) * cellHeight;
                 rectF.set(left, top, right, bottom);
                 break;
             case Direction.EAST:
-                left = (float) ((row+0.8) * cellWidth);
-                top =  col * cellHeight;
-                right = (row + 1) * cellWidth;
-                bottom = (col + 1) * cellHeight;
+                left = (col+0.8F) * cellWidth;
+                top =  row * cellHeight;
+                right = (col + 1) * cellWidth;
+                bottom = (row + 1) * cellHeight;
                 rectF.set(left, top, right, bottom);
                 break;
             case Direction.SOUTH:
-                left = row * cellWidth;
-                top = (float) ((col+0.8) * cellHeight);
-                right = (row + 1) * cellWidth;
-                bottom = (col + 1) * cellHeight;
+                left = col * cellWidth;
+                top = (row+0.8F) * cellHeight;
+                right = (col + 1) * cellWidth;
+                bottom = (row + 1) * cellHeight;
                 rectF.set(left, top, right, bottom);
                 break;
             case Direction.WEST:
-                left = row * cellWidth;
-                top =  col * cellHeight;
-                right = (float) ((row + 0.2) * cellWidth);
-                bottom = (col + 1) * cellHeight;
+                left = col * cellWidth;
+                top =  row * cellHeight;
+                right = (col + 0.2F) * cellWidth;
+                bottom = (row + 1) * cellHeight;
                 rectF.set(left, top, right, bottom);
                 break;
         }
 
         return rectF;
-    }
-
-    private Obstacle getObstacle(int row, int col){
-        for (Obstacle obstacle:arena.getObstacleArrayList()){
-            if (obstacle.getRow()==row && obstacle.getCol()==col) return obstacle;
-        }
-        return null;
     }
 
     public Obstacle getSelectedObstacle(){
@@ -609,4 +568,150 @@ public class PixelGridView extends View {
     public void moveCarWithCommand(String command){
         // moves car onscreen when user sends movement command
     }
+
+    private void sendObstacleChanges(Obstacle obstacle){
+        if (btConnSvc == null) btConnSvc = BluetoothConnectionService.getInstance();
+        if (btConnSvc.getState() != BluetoothConnectionService.STATE_CONNECTED){
+            Toast.makeText(getContext(), "Device is not connected", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String msg = "OBSTACLE,"+obstacle.getObstacleId()+","+obstacle.getRow()+","+obstacle.getCol()+","+obstacle.getTargetAlphaNum();
+        btConnSvc.sendMessage(msg);
+    }
+    
+    public void receiveRobotCoords(int row, int col, int direction){
+        if (!legalPlacementBoundary(0.0F,0.0F,CellValue.CAR,row,col)){
+            Toast.makeText(getContext(), "Car moved to an illegal spot", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        clearCar(false);
+
+        RobotCar robotCar = new RobotCar(col,row,row,col,direction);
+        arena.addRobotCar(robotCar);
+
+        invalidate();
+    }
+
+    private void drawObstacle(Canvas canvas, int row, int col){
+        Obstacle obstacle = arena.getObstacle(row,col);
+
+        // draw obstacle
+        canvas.drawRect(col * cellWidth, row * cellHeight,
+                (col + 1) * cellWidth, (row + 1) * cellHeight,
+                pObstacle);
+
+        // draw obstacle direction
+        RectF rectF = getObstacleDirectionRectF(obstacle);
+        //if (obstacle.isDirectionVisible())
+            canvas.drawRect(rectF, pObstacleDirection);
+
+        // draw obstacle number
+        String targetAlphaNum = obstacle.getTargetAlphaNum();
+        if (targetAlphaNum == null){
+            canvas.drawText(Integer.toString(obstacle.getObstacleId()),(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2, pAlphaNumSmall);
+        } else {
+            canvas.drawText(targetAlphaNum,(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2, pAlphaNumSmall);
+        }
+
+        // draw selected outline
+        if (selectedObject == CellValue.OBSTACLE && selectedObstacle.getObstacleId() == obstacle.getObstacleId()){
+            drawSelectedBorder(canvas, col * cellWidth, row * cellHeight, (col + 1) * cellWidth, (row + 1) * cellHeight);
+        }
+    }
+
+    private void drawCar(Canvas canvas, int row, int col){
+        // draw car
+//                    RectF rect = new RectF((row-1) * cellWidth, (col-1) * cellHeight,(row + 2) * cellWidth, (col + 2) * cellHeight); // 3x3
+        RectF rect = new RectF(col * cellWidth, row * cellHeight,(col + 2) * cellWidth, (row + 2) * cellHeight); // 2x2
+        bmCar = getCarBitmap();
+        canvas.drawBitmap(bmCar, null, rect, null);
+
+        // draw selected outline
+        if (selectedObject == CellValue.CAR){
+            drawSelectedBorder(canvas, col * cellWidth, row * cellHeight,(col + 2) * cellWidth, (row + 2) * cellHeight);
+        }
+    }
+
+    private Bitmap getCarBitmap(){
+        RobotCar robotCar = arena.getRobotCar();
+
+        Bitmap bm = BitmapFactory.decodeResource(getResources(), R.drawable.ic_car_up);
+        Matrix matrix = new Matrix();
+
+        switch (robotCar.getDirection()){
+            case Direction.NORTH:
+                matrix.postRotate(0);
+                break;
+            case Direction.EAST:
+                matrix.postRotate(90);
+                break;
+            case Direction.SOUTH:
+                matrix.postRotate(180);
+                break;
+            case Direction.WEST:
+                matrix.postRotate(270);
+                break;
+        }
+
+        return Bitmap.createBitmap(bm,0,0,bmCar.getWidth(),bmCar.getHeight(),matrix,true);
+    }
+
+    public void setDirectionFromContextMenu(int directionResponse){
+        String directionString = getDirectionString(directionResponse);
+        int curObj = selectedObject;
+        switch (curObj){
+            case CellValue.CAR:
+                RobotCar robotCar = arena.getRobotCar();
+                robotCar.setDirection(directionResponse);
+                Toast.makeText(getContext(),
+                        "RobotCar is now facing "+directionString, Toast.LENGTH_SHORT).show();
+                break;
+            case CellValue.OBSTACLE:
+                Obstacle obstacle = getSelectedObstacle();
+                obstacle.setDirection(directionResponse);
+                Toast.makeText(getContext(),
+                        "Obstacle "+obstacle.getObstacleId()+" is now facing "+directionString, Toast.LENGTH_SHORT).show();
+                break;
+        }
+        invalidate();
+    }
+
+    private String getDirectionString(int direction){
+        switch(direction){
+            case Direction.NORTH:
+                return "North";
+            case Direction.EAST:
+                return "East";
+            case Direction.SOUTH:
+                return "South";
+            case Direction.WEST:
+                return "West";
+            default:
+                return "???";
+        }
+    }
+
+    private void setSelectedObject(int cellValue, @Nullable Obstacle obstacle){
+        switch (cellValue){
+            case CellValue.EMPTY:
+                selectedObject = CellValue.EMPTY;
+                selectedObstacle = null;
+                HomeFragment.setTvSelectedObject("None");
+                break;
+            case CellValue.CAR:
+                selectedObject = CellValue.CAR;
+                selectedObstacle = null;
+                HomeFragment.setTvSelectedObject("RobotCar");
+                break;
+            case CellValue.OBSTACLE:
+                selectedObject = CellValue.OBSTACLE;
+                selectedObstacle = obstacle;
+                HomeFragment.setTvSelectedObject("Obstacle "+selectedObstacle.getObstacleId());
+                break;
+        }
+        invalidate();
+    }
+
 }

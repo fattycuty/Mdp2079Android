@@ -106,7 +106,7 @@
             android:id="@+id/btnClearMap"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginEnd="4dp"
             android:text="Clear Map"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -121,20 +121,20 @@
             app:layout_constraintTop_toBottomOf="@+id/tvObstacle" />
 
         <Button
-            android:id="@+id/btnRotateSelected"
+            android:id="@+id/btnClearObstacles"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Rotate Selected Object"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvSelectedObject" />
+            android:text="Clear All Obstacles"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btnClearRobotCar" />
 
         <Button
-            android:id="@+id/btnClearSelected"
+            android:id="@+id/btnClearRobotCar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Clear Selected Object"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btnRotateSelected" />
+            android:text="Clear RobotCar"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btnClearMap" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -199,20 +199,6 @@
 
     </RelativeLayout>
 
-    <TextView
-        android:id="@+id/tvRoboStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="256dp"
-        android:text="Status: None"
-        app:layout_constraintBottom_toTopOf="@+id/constraintLayout2"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/btnImageRecognition"
-        app:layout_constraintTop_toBottomOf="@+id/rlMap"
-        app:layout_constraintVertical_bias="0.591" />
-
     <Button
         android:id="@+id/btnImageRecognition"
         android:layout_width="wrap_content"
@@ -220,11 +206,11 @@
         android:text="Image Recognition"
         android:textSize="10dp"
         app:layout_constraintBottom_toTopOf="@+id/constraintLayout2"
-        app:layout_constraintEnd_toStartOf="@+id/tvRoboStatus"
+        app:layout_constraintEnd_toStartOf="@+id/btnArenaInfo"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/btnFastestPath"
         app:layout_constraintTop_toBottomOf="@+id/rlMap"
-        app:layout_constraintVertical_bias="0.709" />
+        app:layout_constraintVertical_bias="0.49" />
 
     <Button
         android:id="@+id/btnFastestPath"
@@ -236,7 +222,32 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/rlMap"
-        app:layout_constraintVertical_bias="0.709" />
+        app:layout_constraintVertical_bias="0.472" />
+
+    <Button
+        android:id="@+id/btnArenaInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Send Arena Info"
+        app:layout_constraintBottom_toTopOf="@+id/constraintLayout2"
+        app:layout_constraintEnd_toStartOf="@+id/tvRoboStatus"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/btnImageRecognition"
+        app:layout_constraintTop_toBottomOf="@+id/rlMap"
+        app:layout_constraintVertical_bias="0.472" />
+
+    <TextView
+        android:id="@+id/tvRoboStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Status: None"
+        app:layout_constraintBottom_toTopOf="@+id/constraintLayout2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/btnArenaInfo"
+        app:layout_constraintTop_toBottomOf="@+id/rlMap"
+        app:layout_constraintVertical_bias="0.422" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
