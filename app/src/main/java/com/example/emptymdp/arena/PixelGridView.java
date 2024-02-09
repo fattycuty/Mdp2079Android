@@ -1,8 +1,10 @@
 package com.example.emptymdp.arena;
 
+import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -12,8 +14,11 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.DragEvent;
 import android.view.GestureDetector;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -47,6 +52,8 @@ public class PixelGridView extends View {
     private int numOfObstacles = 0;
     private BluetoothConnectionService btConnSvc;
     GestureDetector gestureDetector;
+//    MenuItemClickListener menuItemClickListener;
+//    OnCreateContextMenuListener onCreateContextMenuListener;
 
     public interface CellValue {
         int EMPTY = 0;
@@ -73,12 +80,17 @@ public class PixelGridView extends View {
 
         // touch events
         gestureDetector = new GestureDetector(context, new GestureListener());
+//        onCreateContextMenuListener = new CreateContextMenuListener();
+//        menuItemClickListener = new MenuItemClickListener();
 
         // paints
         pBorder.setColor(Color.BLACK);
-        pAlphaNumSmall.setColor(Color.BLACK);
-        pAlphaNumBig.setColor(Color.BLACK);
-        pAlphaNumBig.setTextSize(24F);
+        pAlphaNumSmall.setColor(Color.WHITE);
+        pAlphaNumSmall.setTextAlign(Paint.Align.CENTER);
+        pAlphaNumBig.setColor(Color.WHITE);
+        pAlphaNumBig.setTextSize(36F);
+        pAlphaNumBig.setTextAlign(Paint.Align.CENTER);
+        pAlphaNumBig.setFakeBoldText(true);
         pCar1.setColor(Color.RED);
         pCar2.setColor(Color.GRAY);
         pObstacle.setColor(Color.YELLOW);
@@ -186,6 +198,7 @@ public class PixelGridView extends View {
 
         @Override
         public boolean onDown(MotionEvent e) throws ArrayIndexOutOfBoundsException {
+            //Log.d(TAG, "onDown: ");
             col = (int)(e.getX() / cellWidth);
             row = (int)(e.getY() / cellHeight);
 
@@ -195,7 +208,7 @@ public class PixelGridView extends View {
 
             if (curObj == CellValue.OBSTACLE){
                 //Log.d(TAG, "onDown: selected obstacle");
-                setSelectedObject(CellValue.OBSTACLE, arena.getObstacle(row,col));
+                setSelectedObject(CellValue.OBSTACLE, arena.getObstacle(row,col,-1));
 
             } else if (curObj == CellValue.CAR){
                 //Log.d(TAG, "onDown: selected car");
@@ -219,6 +232,34 @@ public class PixelGridView extends View {
             return true;
         }
     }
+
+    // testing
+//    private class CreateContextMenuListener implements OnCreateContextMenuListener {
+//        @Override
+//        public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+//            MenuInflater menuInflater = getActivity().getMenuInflater();
+//            menuInflater.inflate(R.menu.obstacle_context_menu,menu);
+//        }
+//    };
+//
+//    private class MenuItemClickListener implements MenuItem.OnMenuItemClickListener {
+//        @Override
+//        public boolean onMenuItemClick(@NonNull MenuItem item) {
+//            Log.d(TAG, "onMenuItemClick: "+item.getItemId());
+//            return false;
+//        }
+//    };
+//
+//    private Activity getActivity() {
+//        Context context = getContext();
+//        while (context instanceof ContextWrapper) {
+//            if (context instanceof Activity) {
+//                return (Activity)context;
+//            }
+//            context = ((ContextWrapper)context).getBaseContext();
+//        }
+//        return null;
+//    }
 
     public void receiveOnDrag(DragEvent dragEvent, float x, float y){
         int type;
@@ -327,7 +368,7 @@ public class PixelGridView extends View {
                 int oldRow = Integer.parseInt(sOldRow);
                 int oldCol = Integer.parseInt(sOldCol);
 
-                int obstacleId = arena.getObstacle(oldRow,oldCol).getObstacleId();
+                int obstacleId = arena.getObstacle(oldRow,oldCol,-1).getObstacleId();
 
                 if (x==-1 && y==-1){
                     clearSelectedObject();
@@ -423,7 +464,7 @@ public class PixelGridView extends View {
     }
 
     private void removeObstacle(int row, int col){
-        Obstacle obstacle = arena.getObstacle(row,col);
+        Obstacle obstacle = arena.getObstacle(row,col,-1);
 
         if (obstacle==null) return;
 
@@ -450,7 +491,7 @@ public class PixelGridView extends View {
     }
 
     private void updateObstacleLocation(int oldRow, int oldCol, int newRow, int newCol){
-        Obstacle obstacle = arena.getObstacle(oldRow,oldCol);
+        Obstacle obstacle = arena.getObstacle(oldRow,oldCol,-1);
 
         if (obstacle==null) return;
 
@@ -474,7 +515,7 @@ public class PixelGridView extends View {
         switch(curObj){
 
             case CellValue.OBSTACLE:
-                Obstacle curObstacle = arena.getObstacle(row,col);
+                Obstacle curObstacle = arena.getObstacle(row,col,-1);
                 item = new ClipData.Item("MOVE_OBSTACLE");
                 dragData = new ClipData("MOVE_OBSTACLE", new String[] {ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
                 myShadow = new HomeFragment.MyDragShadowBuilder(v, getResources().getDrawable(R.drawable.ic_obstacle, getContext().getTheme()));
@@ -507,11 +548,11 @@ public class PixelGridView extends View {
                 left = col * cellWidth;
                 top = row * cellHeight;
                 right = (col + 1) * cellWidth;
-                bottom = (row + 0.2F) * cellHeight;
+                bottom = (row + 0.1F) * cellHeight;
                 rectF.set(left, top, right, bottom);
                 break;
             case Direction.EAST:
-                left = (col+0.8F) * cellWidth;
+                left = (col+0.9F) * cellWidth;
                 top =  row * cellHeight;
                 right = (col + 1) * cellWidth;
                 bottom = (row + 1) * cellHeight;
@@ -519,7 +560,7 @@ public class PixelGridView extends View {
                 break;
             case Direction.SOUTH:
                 left = col * cellWidth;
-                top = (row+0.8F) * cellHeight;
+                top = (row+0.9F) * cellHeight;
                 right = (col + 1) * cellWidth;
                 bottom = (row + 1) * cellHeight;
                 rectF.set(left, top, right, bottom);
@@ -527,7 +568,7 @@ public class PixelGridView extends View {
             case Direction.WEST:
                 left = col * cellWidth;
                 top =  row * cellHeight;
-                right = (col + 0.2F) * cellWidth;
+                right = (col + 0.1F) * cellWidth;
                 bottom = (row + 1) * cellHeight;
                 rectF.set(left, top, right, bottom);
                 break;
@@ -594,8 +635,18 @@ public class PixelGridView extends View {
         invalidate();
     }
 
+    public void receiveTargetInfo(int obstacleId, String targetId){
+        Obstacle obstacle = arena.getObstacle(-1,-1,obstacleId);
+        if (obstacle==null){
+            Toast.makeText(getContext(), "Obstacle "+obstacleId+" does not exist!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        obstacle.setTargetAlphaNum(targetId);
+        invalidate();
+    }
+
     private void drawObstacle(Canvas canvas, int row, int col){
-        Obstacle obstacle = arena.getObstacle(row,col);
+        Obstacle obstacle = arena.getObstacle(row,col,-1);
 
         // draw obstacle
         canvas.drawRect(col * cellWidth, row * cellHeight,
@@ -604,7 +655,7 @@ public class PixelGridView extends View {
 
         // draw obstacle direction
         RectF rectF = getObstacleDirectionRectF(obstacle);
-        //if (obstacle.isDirectionVisible())
+        //if (obstacle.isDirectionVisible()) // comment if to debug
             canvas.drawRect(rectF, pObstacleDirection);
 
         // draw obstacle number
@@ -612,8 +663,10 @@ public class PixelGridView extends View {
         if (targetAlphaNum == null){
             canvas.drawText(Integer.toString(obstacle.getObstacleId()),(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2, pAlphaNumSmall);
         } else {
-            canvas.drawText(targetAlphaNum,(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2, pAlphaNumSmall);
+            canvas.drawText(targetAlphaNum,((2 * col + 1)*cellWidth/2),((2 * row + 1)*cellHeight/2), pAlphaNumBig);
         }
+        //            col = (int)(e.getX() / cellWidth);
+        //            row = (int)(e.getY() / cellHeight);
 
         // draw selected outline
         if (selectedObject == CellValue.OBSTACLE && selectedObstacle.getObstacleId() == obstacle.getObstacleId()){

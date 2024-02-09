@@ -70,6 +70,7 @@ public class Obstacle {
 
     public void setTargetAlphaNum(String targetAlphaNum) {
         this.targetAlphaNum = targetAlphaNum;
+        directionVisible = true;
     }
 
     public boolean isDirectionVisible() {

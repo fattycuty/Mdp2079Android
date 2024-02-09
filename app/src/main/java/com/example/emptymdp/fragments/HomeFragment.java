@@ -347,10 +347,12 @@ public class HomeFragment extends Fragment {
                 tvIncMsgs.setText(messages);
                 pixelGridView.moveCarWithCommand(message);
                 break;
+
             case "status":
                 message = "Status: "+message;
                 tvRoboStatus.setText(message);
                 break;
+
             case "ROBOT":
                 int row = Integer.parseInt(message.split(",")[0]);
                 int col = Integer.parseInt(message.split(",")[1]);
@@ -381,6 +383,18 @@ public class HomeFragment extends Fragment {
                 messages.append(message);
                 tvIncMsgs.setText(messages);
                 break;
+
+            case "TARGET":
+                int obstacleId = Integer.parseInt(message.split(",")[0]);
+                String targetId = message.split(",")[1];
+
+                pixelGridView.receiveTargetInfo(obstacleId,targetId);
+
+                message = deviceName+": TARGET("+message+")\n";
+                messages.append(message);
+                tvIncMsgs.setText(messages);
+                break;
+
             case "NORMAL_RECEIVED_TEXT":
                 // received normal text
                 message = deviceName+": "+message+"\n";

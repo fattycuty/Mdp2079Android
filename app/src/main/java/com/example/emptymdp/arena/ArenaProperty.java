@@ -43,9 +43,14 @@ public class ArenaProperty {
         this.obstacleArrayList = obstacleArrayList;
     }
 
-    public Obstacle getObstacle(int row, int col){
+    public Obstacle getObstacle(int row, int col, int obstacleId){
+        // obstacleId == -1 -> find obstacle with rowcol
+        // obstacleId != -1 -> find obstacle with id
         for (Obstacle obstacle:getObstacleArrayList()){
-            if (obstacle.getRow()==row && obstacle.getCol()==col) return obstacle;
+            if (obstacleId==-1 && obstacle.getRow()==row && obstacle.getCol()==col)
+                return obstacle;
+            else if (obstacleId!=-1 && obstacle.getObstacleId()==obstacleId)
+                return obstacle;
         }
         return null;
     }
