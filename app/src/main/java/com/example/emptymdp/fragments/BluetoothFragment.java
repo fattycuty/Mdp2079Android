@@ -466,16 +466,16 @@ public class BluetoothFragment extends Fragment {
                     String writeMessage = new String(writeBuf);
                     //HomeFragment.getMessage("Me:  " + writeMessage+"\n");
                     writeMessage = "SENT_TEXT:"+writeMessage;
-                    sendToHomeFrag("Me",writeMessage);
+                    sendToHomeFrag("Me",writeMessage,"btFragToNormalTextFrag");
                     break;
                 case BluetoothConnectionService.Constants.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
-
+                    //Log.d(TAG, "handleMessage: "+readMessage);
                     // handle message differently once we agree on the format
                     //HomeFragment.getMessage(mConnectedDeviceName + ":  " + readMessage+"\n");
-                    sendToHomeFrag(mConnectedDeviceName,readMessage);
+                    sendToHomeFrag(mConnectedDeviceName,readMessage,"btFragToArenaUpdatesFrag");
                     break;
                 case BluetoothConnectionService.Constants.MESSAGE_DEVICE_NAME:
                     // save the connected device's name
@@ -504,11 +504,27 @@ public class BluetoothFragment extends Fragment {
         tvBtStatus.setTextColor(color);
     }
 
-    private void sendToHomeFrag(String deviceName, String msg){
+    private void sendToHomeFrag(String deviceName, String msg, String who){
         Bundle bundle = new Bundle();
+        bundle.putString("Who",who);
         bundle.putString("Message", msg);
         bundle.putString("Device Name",deviceName);
-        getParentFragmentManager().setFragmentResult("homeFragKey", bundle);
+
+        getParentFragmentManager().setFragmentResult("btFragtoHomeFrag", bundle);
     }
 
+//    private void sendToNormalTextFrag(String msg){
+//        Bundle bundle = new Bundle();
+//        bundle.putString("SENT_MESSAGE", msg);
+//        getParentFragmentManager().setFragmentResult("normalTextFragKey", bundle);
+//        Log.d(TAG, "sendToNormalTextFrag: ");
+//    }
+//
+//    private void sendToArenaUpdatesFrag(String deviceName, String msg){
+//        Bundle bundle = new Bundle();
+//        bundle.putString("Message", msg);
+//        bundle.putString("Device Name",deviceName);
+//        getParentFragmentManager().setFragmentResult("arenaUpdatesFragKey", bundle);
+//        Log.d(TAG, "sendToArenaUpdatesFrag: ");
+//    }
 }

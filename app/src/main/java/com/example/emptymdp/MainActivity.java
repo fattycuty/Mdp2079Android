@@ -102,8 +102,4 @@ public class MainActivity extends AppCompatActivity {
             checkPermission();
         }
     }
-
-    private void log(String logMessage){
-        Log.d(TAG, logMessage);
-    }
 }

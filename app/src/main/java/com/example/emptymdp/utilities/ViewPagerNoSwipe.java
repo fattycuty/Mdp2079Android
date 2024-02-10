@@ -6,7 +6,6 @@ import android.view.MotionEvent;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Scroller;
 
-import androidx.annotation.NonNull;
 import androidx.viewpager.widget.ViewPager;
 
 import java.lang.reflect.Field;

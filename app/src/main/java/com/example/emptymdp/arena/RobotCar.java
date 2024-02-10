@@ -7,7 +7,7 @@ public class RobotCar {
     private int direction, row, col; // row col of top left 2x2 square
     private final HashMap<Integer, int[]> rowColMap;
 
-    public interface RoboMapArea {
+    public interface RobotMapArea {
         int TOP_LEFT = 0;
         int TOP_RIGHT = 1;
         int BOTTOM_LEFT = 2;
@@ -21,10 +21,10 @@ public class RobotCar {
         this.col = col;
         this.direction = direction;
         rowColMap = new HashMap<>();
-        rowColMap.put(RoboMapArea.TOP_LEFT, new int[]{row,col});
-        rowColMap.put(RoboMapArea.TOP_RIGHT, new int[]{row,col+1});
-        rowColMap.put(RoboMapArea.BOTTOM_LEFT, new int[]{row+1,col});
-        rowColMap.put(RoboMapArea.BOTTOM_RIGHT, new int[]{row+1,col+1});
+        rowColMap.put(RobotMapArea.TOP_LEFT, new int[]{row,col});
+        rowColMap.put(RobotMapArea.TOP_RIGHT, new int[]{row,col+1});
+        rowColMap.put(RobotMapArea.BOTTOM_LEFT, new int[]{row+1,col});
+        rowColMap.put(RobotMapArea.BOTTOM_RIGHT, new int[]{row+1,col+1});
 
     }
 

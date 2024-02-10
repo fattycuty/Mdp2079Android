@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentResultListener;
+import androidx.viewpager2.widget.ViewPager2;
 
 import android.view.ContextMenu;
 import android.view.DragEvent;
@@ -20,31 +21,31 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.emptymdp.R;
 import com.example.emptymdp.arena.PixelGridView;
-import com.example.emptymdp.bluetooth.BluetoothConnectionService;
+import com.example.emptymdp.utilities.MessagePagerAdapter;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 
+import java.util.Objects;
 
 public class HomeFragment extends Fragment {
 
     private final String TAG = "debugHomeFrag";
-    static TextView tvIncMsgs, tvRoboStatus, tvSelectedObject;
-    static StringBuilder messages = new StringBuilder();
-    Button btnSendMsg, btnClearMap, btnFastestPath, btnImageRecognition,
+    static TextView tvRoboStatus, tvSelectedObject;
+    Button btnClearMap, btnFastestPath, btnImageRecognition,
             btnClearRobotCar, btnClearObstacles, btnArenaInfo;
-    EditText etSendMsg;
-    BluetoothConnectionService btConnSvc;
     ImageButton btnTl,btnTr,btnBr,btnBl,btnUp,btnDown;
     RelativeLayout rlMap;
     PixelGridView pixelGridView;
     ImageView ivCar, ivObstacle;
+    ViewPager2 vpMessages;
+    MessagePagerAdapter messagePagerAdapter;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -57,17 +58,40 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        getParentFragmentManager().setFragmentResultListener("homeFragKey", this, new FragmentResultListener() {
+        // message fragment
+        messagePagerAdapter = new MessagePagerAdapter(this);
+        vpMessages = view.findViewById(R.id.vpMessages);
+        vpMessages.setAdapter(messagePagerAdapter);
+        TabLayout tabLayout = getView().findViewById(R.id.tlMessages);
+        new TabLayoutMediator(tabLayout, vpMessages,
+                new TabLayoutMediator.TabConfigurationStrategy() {
+                    @Override
+                    public void onConfigureTab(@NonNull TabLayout.Tab tab, int position) {
+                        switch(position) {
+                            case 0:
+                                tab.setText("Normal Text");
+                                break;
+                            case 1:
+                                tab.setText("Arena Updates");
+                                break;
+                        }
+                    }
+                }
+        ).attach();
+
+        // receive message from bluetooth fragment
+        getParentFragmentManager().setFragmentResultListener("btFragtoHomeFrag", this, new FragmentResultListener() {
             @Override
             public void onFragmentResult(@NonNull String requestKey, @NonNull Bundle bundle) {
-                parseMessage(bundle);
+                String who = bundle.getString("Who");
+                bundle.remove("Who");
+
+                assert who != null;
+                getChildFragmentManager().setFragmentResult(who, bundle);
             }
         });
 
         // ===================== ui elements =====================
-        btnSendMsg = getView().findViewById(R.id.btnSendMsg);
-        etSendMsg = getView().findViewById(R.id.etSendMsg);
-        tvIncMsgs = getView().findViewById(R.id.tvIncMsgs);
         btnBl = getView().findViewById(R.id.btnBlArrow);
         btnDown = getView().findViewById(R.id.btnDownArrow);
         btnBr = getView().findViewById(R.id.btnBrArrow);
@@ -90,9 +114,6 @@ public class HomeFragment extends Fragment {
         // draggable objects
         ivCar.setTag("NEW_CAR");
         ivObstacle.setTag("NEW_OBSTACLE");
-
-        // chat box
-        tvIncMsgs.setText(messages);
 
         // btn cmds
         manualMovement(btnUp, "f");
@@ -122,14 +143,6 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        btnSendMsg.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String msg = etSendMsg.getText().toString();
-                if (msg.equals("")) return;
-                sendMessage(msg);
-            }
-        });
 
         ivCar.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -237,7 +250,7 @@ public class HomeFragment extends Fragment {
     public void onCreateContextMenu(@NonNull ContextMenu menu, @NonNull View v, @Nullable ContextMenu.ContextMenuInfo menuInfo) {
         // to inflate object context menu
         super.onCreateContextMenu(menu, v, menuInfo);
-        MenuInflater inflater = getActivity().getMenuInflater();
+        MenuInflater inflater = requireActivity().getMenuInflater();
         inflater.inflate(R.menu.obstacle_context_menu,menu);
     }
 
@@ -281,13 +294,9 @@ public class HomeFragment extends Fragment {
     }
 
     private void sendMessage(String msg){
-        if (btConnSvc == null) btConnSvc = BluetoothConnectionService.getInstance();
-        if (btConnSvc.getState() != BluetoothConnectionService.STATE_CONNECTED){
-            Toast.makeText(getContext(), "Device is not connected", Toast.LENGTH_SHORT).show();
-            appendFailedMessage(msg);
-            return;
-        }
-        btConnSvc.sendMessage(msg);
+        Bundle bundle = new Bundle();
+        bundle.putString("SENT_MESSAGE", msg);
+        getChildFragmentManager().setFragmentResult("homeFragToNormalTextFrag", bundle);
     }
 
     public static class MyDragShadowBuilder extends View.DragShadowBuilder {
@@ -295,15 +304,12 @@ public class HomeFragment extends Fragment {
         public MyDragShadowBuilder(View view, Drawable img) {
             super(view);
 
-            shadow = img.getConstantState().newDrawable().mutate();
+            shadow = Objects.requireNonNull(img.getConstantState()).newDrawable().mutate();
         }
 
         @Override
         public void onProvideShadowMetrics (Point size, Point touch) {
             int width, height;
-
-//            width = getView().getWidth() / 2;
-//            height = getView().getHeight() / 2;
 
             width = height = 128;
 
@@ -314,7 +320,7 @@ public class HomeFragment extends Fragment {
             touch.set(width / 2, height / 2);
         }
         @Override
-        public void onDrawShadow(Canvas canvas) {
+        public void onDrawShadow(@NonNull Canvas canvas) {
             shadow.draw(canvas);
         }
     }
@@ -326,94 +332,9 @@ public class HomeFragment extends Fragment {
         v.startDragAndDrop(dragData, myShadow, null,0);
     }
 
-    private void parseMessage(Bundle bundle){
-        String messageType, message;
-
-        String bundledMessage = bundle.getString("Message");
-        String deviceName = bundle.getString("Device Name");
-
-        if (bundledMessage.contains(":")){
-            messageType = bundledMessage.split(":")[0];
-            message = bundledMessage.split(":")[1];
-        } else {
-            messageType = "NORMAL_RECEIVED_TEXT";
-            message = bundledMessage;
-        }
-
-        switch (messageType){
-            case "SENT_TEXT":
-                message = "Me: "+message+"\n";
-                messages.append(message);
-                tvIncMsgs.setText(messages);
-                pixelGridView.moveCarWithCommand(message);
-                break;
-
-            case "status":
-                message = "Status: "+message;
-                tvRoboStatus.setText(message);
-                break;
-
-            case "ROBOT":
-                int row = Integer.parseInt(message.split(",")[0]);
-                int col = Integer.parseInt(message.split(",")[1]);
-
-                String sDirection = message.split(",")[2];
-                int direction;
-                switch (sDirection){
-                    case "N":
-                        direction = PixelGridView.Direction.NORTH;
-                        break;
-                    case "E":
-                        direction = PixelGridView.Direction.EAST;
-                        break;
-                    case "S":
-                        direction = PixelGridView.Direction.SOUTH;
-                        break;
-                    case "W":
-                        direction = PixelGridView.Direction.WEST;
-                        break;
-                    default:
-                        direction = PixelGridView.Direction.NORTH;
-                        break;
-                }
-
-                pixelGridView.receiveRobotCoords(row,col,direction);
-
-                message = deviceName+": ROBOT("+message+")\n";
-                messages.append(message);
-                tvIncMsgs.setText(messages);
-                break;
-
-            case "TARGET":
-                int obstacleId = Integer.parseInt(message.split(",")[0]);
-                String targetId = message.split(",")[1];
-
-                pixelGridView.receiveTargetInfo(obstacleId,targetId);
-
-                message = deviceName+": TARGET("+message+")\n";
-                messages.append(message);
-                tvIncMsgs.setText(messages);
-                break;
-
-            case "NORMAL_RECEIVED_TEXT":
-                // received normal text
-                message = deviceName+": "+message+"\n";
-                messages.append(message);
-                tvIncMsgs.setText(messages);
-                break;
-        }
-
-    }
-
     public static void setTvSelectedObject(String selected){
         selected = "Selected: "+selected;
         tvSelectedObject.setText(selected);
-    }
-
-    public static void appendFailedMessage(String message){
-        message = "Me: "+message+" (unsent)\n";
-        messages.append(message);
-        tvIncMsgs.setText(messages);
     }
 
 }
