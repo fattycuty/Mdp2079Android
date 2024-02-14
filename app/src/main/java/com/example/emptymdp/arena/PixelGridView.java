@@ -39,6 +39,7 @@ public class PixelGridView extends View {
     private final Paint pObstacleDirection = new Paint();
     private final Paint pAlphaNumSmall = new Paint();
     private final Paint pAlphaNumBig = new Paint();
+    private final Paint testPaint = new Paint();
     private final Paint pBorder = new Paint();
     private final Paint pSelectedBorder = new Paint();
     private int selectedObject;
@@ -83,6 +84,7 @@ public class PixelGridView extends View {
 //        menuItemClickListener = new MenuItemClickListener();
 
         // paints
+        testPaint.setColor(Color.BLACK);
         pBorder.setColor(Color.BLACK);
         pAlphaNumSmall.setColor(Color.WHITE);
         pAlphaNumSmall.setTextAlign(Paint.Align.CENTER);
@@ -157,7 +159,7 @@ public class PixelGridView extends View {
 
         for (int row = 0; row < numRows; row++) {
             for (int col = 0; col < numColumns; col++) {
-                //canvas.drawText("r"+row+",c"+col,(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2,pAlphaNum);
+                canvas.drawText("r"+row+",c"+col,(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2,testPaint);
 
                 if (matrixBoard[row][col] == CellValue.OBSTACLE) {
                     drawObstacle(canvas,row,col);
@@ -488,14 +490,15 @@ public class PixelGridView extends View {
     public void removeAllObstacles(){
         for (Obstacle obstacle:arena.getObstacleArrayList()){
             arena.getMatrixBoard()[obstacle.getRow()][obstacle.getCol()] = CellValue.EMPTY;
-            break;
         }
         arena.setObstacleArrayList(new ArrayList<>());
 
         clearSelectedObject();
 
+        numOfObstacles = 0;
+
         Toast.makeText(getContext(), "Removed all obstacles", Toast.LENGTH_SHORT).show();
-        
+
         invalidate();
     }
 
@@ -527,7 +530,7 @@ public class PixelGridView extends View {
                 Obstacle curObstacle = arena.getObstacle(row,col,-1);
                 item = new ClipData.Item("MOVE_OBSTACLE");
                 dragData = new ClipData("MOVE_OBSTACLE", new String[] {ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
-                myShadow = new HomeFragment.MyDragShadowBuilder(v, Objects.requireNonNull(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_car_up, getContext().getTheme())));
+                myShadow = new HomeFragment.MyDragShadowBuilder(v, Objects.requireNonNull(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_obstacle, getContext().getTheme())));
                 v.startDragAndDrop(dragData, myShadow, curObstacle,0);
                 //Log.d(TAG, "dragCellObject: dragging obstacle "+curObstacle.getObstacleId());
                 break;
@@ -677,6 +680,11 @@ public class PixelGridView extends View {
 
     private void drawObstacle(Canvas canvas, int row, int col){
         Obstacle obstacle = arena.getObstacle(row,col,-1);
+
+//        if (obstacle==null) {
+//            Log.e(TAG, "drawObstacle: row,col "+row+" "+col);
+//            return;
+//        }
 
         // draw obstacle
         canvas.drawRect(col * cellWidth, row * cellHeight,

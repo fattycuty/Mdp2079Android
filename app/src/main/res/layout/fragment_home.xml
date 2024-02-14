@@ -8,8 +8,8 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout2"
-        android:layout_width="350dp"
-        android:layout_height="315dp"
+        android:layout_width="300dp"
+        android:layout_height="200dp"
         android:layout_marginTop="104dp"
         app:layout_constraintEnd_toStartOf="@+id/flMessages"
         app:layout_constraintHorizontal_bias="0.5"
@@ -78,7 +78,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Car"
-            android:textSize="30px"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -88,7 +87,6 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="Obstacle"
-            android:textSize="30px"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/ivCar" />
 
@@ -139,8 +137,8 @@
 
     <RelativeLayout
         android:id="@+id/rlMap"
-        android:layout_width="640dp"
-        android:layout_height="640dp"
+        android:layout_width="800px"
+        android:layout_height="800px"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.495"
