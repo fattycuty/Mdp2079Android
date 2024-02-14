@@ -8,11 +8,10 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout2"
-        android:layout_width="300dp"
-        android:layout_height="200dp"
+        android:layout_width="800px"
+        android:layout_height="250px"
         android:layout_marginTop="104dp"
-        app:layout_constraintEnd_toStartOf="@+id/flMessages"
-        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/rlMap">
 
@@ -21,108 +20,89 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_bl_arrow"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btnTlArrow" />
 
         <ImageButton
             android:id="@+id/btnBrArrow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_br_arrow"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/btnDownArrow" />
+            app:layout_constraintStart_toEndOf="@+id/btnDownArrow"
+            app:layout_constraintTop_toBottomOf="@+id/btnTrArrow" />
 
         <ImageButton
             android:id="@+id/btnDownArrow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_bottom_arrow"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/btnBlArrow" />
+            app:layout_constraintStart_toEndOf="@+id/btnBlArrow"
+            app:layout_constraintTop_toBottomOf="@+id/btnTopArrow" />
 
         <ImageButton
             android:id="@+id/btnTrArrow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_tr_arrow"
-            app:layout_constraintBottom_toTopOf="@+id/btnBrArrow"
-            app:layout_constraintStart_toEndOf="@+id/btnTopArrow" />
+            app:layout_constraintStart_toEndOf="@+id/btnTopArrow"
+            app:layout_constraintTop_toBottomOf="@+id/tvSelectedObject" />
 
         <ImageButton
             android:id="@+id/btnTlArrow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_tl_arrow"
-            app:layout_constraintBottom_toTopOf="@+id/btnBlArrow"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvSelectedObject" />
 
         <ImageButton
             android:id="@+id/btnTopArrow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_top_arrow"
-            app:layout_constraintBottom_toTopOf="@+id/btnDownArrow"
-            app:layout_constraintStart_toEndOf="@+id/btnTlArrow" />
+            app:layout_constraintStart_toEndOf="@+id/btnTlArrow"
+            app:layout_constraintTop_toBottomOf="@+id/tvSelectedObject" />
 
         <ImageView
             android:id="@+id/ivCar"
             android:layout_width="37dp"
             android:layout_height="38dp"
-            android:layout_marginStart="4dp"
             android:src="@drawable/ic_car_up"
-            app:layout_constraintStart_toEndOf="@+id/tvCarObject"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/tvCarObject"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Car"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/tvObstacle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Obstacle"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/ivCar" />
 
         <ImageView
             android:id="@+id/ivObstacle"
             android:layout_width="45dp"
             android:layout_height="38dp"
-            android:layout_marginStart="4dp"
             android:src="@drawable/ic_obstacle"
-            app:layout_constraintStart_toEndOf="@+id/tvObstacle"
-            app:layout_constraintTop_toTopOf="@+id/tvObstacle" />
+            app:layout_constraintStart_toEndOf="@+id/ivCar"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <Button
             android:id="@+id/btnClearMap"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
             android:text="Clear Map"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/flMessages"
+            app:layout_constraintStart_toEndOf="@+id/btnTrArrow"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/tvSelectedObject"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
             android:text="Selected: None"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvObstacle" />
+            app:layout_constraintTop_toBottomOf="@+id/ivCar" />
 
         <Button
             android:id="@+id/btnClearObstacles"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Clear All Obstacles"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/flMessages"
+            app:layout_constraintStart_toEndOf="@+id/btnBrArrow"
             app:layout_constraintTop_toBottomOf="@+id/btnClearRobotCar" />
 
         <Button
@@ -130,8 +110,31 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Clear RobotCar"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/flMessages"
+            app:layout_constraintStart_toEndOf="@+id/btnTrArrow"
             app:layout_constraintTop_toBottomOf="@+id/btnClearMap" />
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tlMessages"
+            android:layout_width="270dp"
+            android:layout_height="40dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <FrameLayout
+            android:id="@+id/flMessages"
+            android:layout_width="270dp"
+            android:layout_height="160dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tlMessages">
+
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/vpMessages"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+            </androidx.viewpager2.widget.ViewPager2>
+        </FrameLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -197,35 +200,6 @@
         app:layout_constraintStart_toEndOf="@+id/btnArenaInfo"
         app:layout_constraintTop_toBottomOf="@+id/rlMap"
         app:layout_constraintVertical_bias="0.422" />
-
-
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tlMessages"
-        android:layout_width="270dp"
-        android:layout_height="40dp"
-        android:layout_marginTop="104dp"
-        android:layout_marginEnd="44dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/constraintLayout2"
-        app:layout_constraintTop_toBottomOf="@+id/rlMap" />
-
-    <FrameLayout
-        android:id="@+id/flMessages"
-        android:layout_width="270dp"
-        android:layout_height="275dp"
-        android:layout_marginEnd="44dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/constraintLayout2"
-        app:layout_constraintTop_toBottomOf="@+id/tlMessages">
-
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/vpMessages"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-        </androidx.viewpager2.widget.ViewPager2>
-    </FrameLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

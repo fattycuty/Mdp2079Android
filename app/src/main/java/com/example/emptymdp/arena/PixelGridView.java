@@ -159,7 +159,7 @@ public class PixelGridView extends View {
 
         for (int row = 0; row < numRows; row++) {
             for (int col = 0; col < numColumns; col++) {
-                canvas.drawText("r"+row+",c"+col,(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2,testPaint);
+                //canvas.drawText("r"+row+",c"+col,(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2,testPaint);
 
                 if (matrixBoard[row][col] == CellValue.OBSTACLE) {
                     drawObstacle(canvas,row,col);
