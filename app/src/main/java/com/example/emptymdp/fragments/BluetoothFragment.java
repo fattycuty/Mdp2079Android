@@ -512,19 +512,4 @@ public class BluetoothFragment extends Fragment {
 
         getParentFragmentManager().setFragmentResult("btFragtoHomeFrag", bundle);
     }
-
-//    private void sendToNormalTextFrag(String msg){
-//        Bundle bundle = new Bundle();
-//        bundle.putString("SENT_MESSAGE", msg);
-//        getParentFragmentManager().setFragmentResult("normalTextFragKey", bundle);
-//        Log.d(TAG, "sendToNormalTextFrag: ");
-//    }
-//
-//    private void sendToArenaUpdatesFrag(String deviceName, String msg){
-//        Bundle bundle = new Bundle();
-//        bundle.putString("Message", msg);
-//        bundle.putString("Device Name",deviceName);
-//        getParentFragmentManager().setFragmentResult("arenaUpdatesFragKey", bundle);
-//        Log.d(TAG, "sendToArenaUpdatesFrag: ");
-//    }
 }

@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,9 +21,6 @@ import com.example.emptymdp.bluetooth.BluetoothConnectionService;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.Iterator;
 
 public class ArenaUpdatesFragment extends Fragment {
     private final String TAG = "debugArenaUpdatesFrag";
@@ -65,20 +63,20 @@ public class ArenaUpdatesFragment extends Fragment {
     }
 
     private void parseMessage(Bundle bundle){
-        String messageType, message;
-        ArrayList<String> messageArray;
+        String messageType, message = null;
+        int direction;
+        JSONObject jsonObject = new JSONObject();
 
         String bundledMessage = bundle.getString("Message");
         String deviceName = bundle.getString("Device Name");
-        Log.d(TAG, "parseMessage: "+bundledMessage);
+        //Log.d(TAG, "parseMessage: "+bundledMessage);
 
         if (isJSONValid(bundledMessage)){
-            // for status
             try {
-                messageArray = jsonObjToArray(bundledMessage);
-                messageType = messageArray.get(0);
-                message = messageArray.get(1);
-                Log.d(TAG, "parseMessage: "+message);
+                assert bundledMessage != null;
+                jsonObject = new JSONObject(bundledMessage);
+                messageType = jsonObject.get("cat").toString();
+                message = bundledMessage;
             } catch (JSONException e){
                 //Log.e(TAG, "parseMessage: ", e);
                 messageType = "NORMAL_RECEIVED_TEXT";
@@ -86,15 +84,8 @@ public class ArenaUpdatesFragment extends Fragment {
             }
 
         } else {
-            try {
-                assert bundledMessage != null;
-                messageType = bundledMessage.split(":")[0];
-                message = bundledMessage.split(":")[1];
-            } catch (Exception e){
-                //Log.e(TAG, "parseMessage: ", e);
-                messageType = "NORMAL_RECEIVED_TEXT";
-                message = bundledMessage;
-            }
+            messageType = "NORMAL_RECEIVED_TEXT";
+            message = bundledMessage;
         }
 
         int col,row;
@@ -103,65 +94,127 @@ public class ArenaUpdatesFragment extends Fragment {
                 message = "Me: "+message+"\n";
                 arenaUpdatesString.append(message);
                 tvIncArenaUpdates.setText(arenaUpdatesString);
-                pixelGridView.moveCarWithCommand(message);
                 break;
 
             case "status":
-                message = "Status: "+message;
-                HomeFragment.tvRoboStatus.setText(message);
+                Log.d(TAG, "parseMessage: status "+jsonObject);
+                try {
+                    message = "Status: "+jsonObject.get("value");
+                    HomeFragment.tvRoboStatus.setText(message);
+                } catch (JSONException e){
+                    Log.e(TAG, "parseMessage: status ", e);
+                }
                 break;
 
-            case "ROBOTPOSITION":
-                message = message.replaceAll("\\s+","");
-                col = Integer.parseInt(message.split(",")[0]);
-                row = Integer.parseInt(message.split(",")[1]);
+            case "image-rec":
+                Log.d(TAG, "parseMessage: imagerec "+jsonObject);
+                try {
+                    JSONObject value = new JSONObject(jsonObject.get("value").toString());
 
-                int direction = Integer.parseInt(message.split(",")[2]);
+                    pixelGridView.receiveTargetInfo(Integer.parseInt(value.get("obstacle_id").toString()),value.get("image_id").toString());
 
-                pixelGridView.receiveRobotCoords(row,col,direction);
-
-                message = deviceName+": ROBOTPOSITION("+message+")\n";
-                arenaUpdatesString.append(message);
-                tvIncArenaUpdates.setText(arenaUpdatesString);
+                    message = deviceName+":"+message+"\n";
+                    arenaUpdatesString.append(message);
+                    tvIncArenaUpdates.setText(arenaUpdatesString);
+                } catch (JSONException e){
+                    Log.e(TAG, "parseMessage: imagerec ", e);
+                }
                 break;
 
-            case "ADDOBSTACLE":
-                message = message.replaceAll("\\s+","");
-                col = Integer.parseInt(message.split(",")[0]);
-                row = Integer.parseInt(message.split(",")[1]);
+            case "location":
+                Log.d(TAG, "parseMessage: location "+jsonObject);
+                try {
+                    JSONObject value = new JSONObject(jsonObject.get("value").toString());
 
-                // handle add
-                pixelGridView.receiveObstacleCoords(row,col,"ADD");
+                    int[] rowCol = PixelGridView.convertRowCol(
+                            Integer.parseInt(value.get("x").toString()),
+                            Integer.parseInt(value.get("y").toString()));
 
-                message = deviceName+": ADDOBSTACLE("+message+")\n";
-                arenaUpdatesString.append(message);
-                tvIncArenaUpdates.setText(arenaUpdatesString);
+                    row = rowCol[0];
+                    col = rowCol[1];
+
+                    direction = Integer.parseInt(value.get("d").toString());
+
+                    pixelGridView.receiveRobotCoords(row,col,direction);
+
+                    message = deviceName+":"+message+"\n";
+                    arenaUpdatesString.append(message);
+                    tvIncArenaUpdates.setText(arenaUpdatesString);
+                } catch (JSONException e){
+                    Log.e(TAG, "parseMessage: location ", e);
+                }
                 break;
 
-            case "REMOVEOBSTACLE":
-                message = message.replaceAll("\\s+","");
-                col = Integer.parseInt(message.split(",")[0]);
-                row = Integer.parseInt(message.split(",")[1]);
-
-                // handle remove
-                pixelGridView.receiveObstacleCoords(row,col,"REMOVE");
-
-                message = deviceName+": REMOVEOBSTACLE("+message+")\n";
-                arenaUpdatesString.append(message);
-                tvIncArenaUpdates.setText(arenaUpdatesString);
+            case "error":
+                Log.d(TAG, "parseMessage: error "+jsonObject);
+                try {
+                    Toast.makeText(getContext(), jsonObject.get("value").toString(), Toast.LENGTH_SHORT).show();
+                } catch (JSONException e){
+                    Log.e(TAG, "parseMessage: display error toast ", e);
+                }
                 break;
 
-            case "TARGET":
-                int obstacleId = Integer.parseInt(message.split(",")[0]);
-                String targetId = message.split(",")[1];
-
-                pixelGridView.receiveTargetInfo(obstacleId,targetId);
-
-                message = deviceName+": TARGET("+message+")\n";
-                arenaUpdatesString.append(message);
-                tvIncArenaUpdates.setText(arenaUpdatesString);
+            case "info":
+                Log.d(TAG, "parseMessage: info "+jsonObject);
+                try {
+                    message = deviceName+": "+jsonObject.get("value")+"\n";
+                    NormalTextFragment.updateTextString(message);
+                } catch (JSONException e){
+                    Log.e(TAG, "parseMessage: info ", e);
+                }
                 break;
 
+//            case "ROBOTPOSITION":
+//                message = message.replaceAll("\\s+","");
+//                col = Integer.parseInt(message.split(",")[0]);
+//                row = Integer.parseInt(message.split(",")[1]);
+//
+//                direction = Integer.parseInt(message.split(",")[2]);
+//
+//                pixelGridView.receiveRobotCoords(row,col,direction);
+//
+//                message = deviceName+": ROBOTPOSITION("+message+")\n";
+//                arenaUpdatesString.append(message);
+//                tvIncArenaUpdates.setText(arenaUpdatesString);
+//                break;
+//
+//            case "ADDOBSTACLE":
+//                message = message.replaceAll("\\s+","");
+//                col = Integer.parseInt(message.split(",")[0]);
+//                row = Integer.parseInt(message.split(",")[1]);
+//
+//                // handle add
+//                pixelGridView.receiveObstacleCoords(row,col,"ADD");
+//
+//                message = deviceName+": ADDOBSTACLE("+message+")\n";
+//                arenaUpdatesString.append(message);
+//                tvIncArenaUpdates.setText(arenaUpdatesString);
+//                break;
+//
+//            case "REMOVEOBSTACLE":
+//                message = message.replaceAll("\\s+","");
+//                col = Integer.parseInt(message.split(",")[0]);
+//                row = Integer.parseInt(message.split(",")[1]);
+//
+//                // handle remove
+//                pixelGridView.receiveObstacleCoords(row,col,"REMOVE");
+//
+//                message = deviceName+": REMOVEOBSTACLE("+message+")\n";
+//                arenaUpdatesString.append(message);
+//                tvIncArenaUpdates.setText(arenaUpdatesString);
+//                break;
+//
+//            case "TARGET":
+//                int obstacleId = Integer.parseInt(message.split(",")[0]);
+//                String targetId = message.split(",")[1];
+//
+//                pixelGridView.receiveTargetInfo(obstacleId,targetId);
+//
+//                message = deviceName+": TARGET("+message+")\n";
+//                arenaUpdatesString.append(message);
+//                tvIncArenaUpdates.setText(arenaUpdatesString);
+//                break;
+//
             case "NORMAL_RECEIVED_TEXT":
                 // received normal text
                 message = deviceName+": "+message+"\n";
@@ -183,23 +236,5 @@ public class ArenaUpdatesFragment extends Fragment {
             }
         }
         return true;
-    }
-
-    private ArrayList<String> jsonObjToArray(String json) throws JSONException {
-        // only works with a single key in the json
-        JSONObject jsonObj = new JSONObject(json);
-        ArrayList<String> messageArray = new ArrayList<>();
-
-        Iterator<String> keys= jsonObj.keys();
-        String keyValue, valueString;
-        while (keys.hasNext())
-        {
-            keyValue = keys.next();
-            valueString = jsonObj.getString(keyValue);
-            messageArray.add(keyValue);
-            messageArray.add(valueString);
-        }
-
-        return messageArray;
     }
 }

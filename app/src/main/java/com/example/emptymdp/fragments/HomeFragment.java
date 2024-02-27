@@ -1,8 +1,11 @@
 package com.example.emptymdp.fragments;
 
+import android.annotation.SuppressLint;
 import android.content.ClipData;
 import android.content.ClipDescription;
+import android.content.res.ColorStateList;;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -13,11 +16,13 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentResultListener;
 import androidx.viewpager2.widget.ViewPager2;
 
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -32,20 +37,33 @@ import com.example.emptymdp.utilities.MessagePagerAdapter;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
+import org.json.JSONObject;
+
 import java.util.Objects;
 
 public class HomeFragment extends Fragment {
 
     private final String TAG = "debugHomeFrag";
     static TextView tvRoboStatus, tvSelectedObject;
-    Button btnClearMap, btnFastestPath, btnImageRecognition,
-            btnClearRobotCar, btnClearObstacles, btnArenaInfo;
-    ImageButton btnTl,btnTr,btnBr,btnBl,btnUp,btnDown;
+    Button btnClearMap, btnFastestPath, btnManualSnap,
+            btnClearRobotCar, btnClearObstacles, btnSetMode, btnImageRecognition;
+    ImageButton btnTl,btnTr,btnUp,btnDown;
     RelativeLayout rlMap;
     PixelGridView pixelGridView;
     ImageView ivCar, ivObstacle;
     ViewPager2 vpMessages;
     MessagePagerAdapter messagePagerAdapter;
+    int[][] states = new int[][] {
+            new int[] { android.R.attr.state_enabled}, // enabled
+            new int[] {-android.R.attr.state_enabled}, // disabled
+    };
+
+    int[] colors = new int[] {
+            R.style.Theme_EmptyMdp,
+            Color.GRAY
+    };
+    ColorStateList colorStateList = new ColorStateList(states,colors);
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -92,9 +110,7 @@ public class HomeFragment extends Fragment {
         });
 
         // ===================== ui elements =====================
-        btnBl = getView().findViewById(R.id.btnBlArrow);
         btnDown = getView().findViewById(R.id.btnDownArrow);
-        btnBr = getView().findViewById(R.id.btnBrArrow);
         btnUp = getView().findViewById(R.id.btnTopArrow);
         btnTl = getView().findViewById(R.id.btnTlArrow);
         btnTr = getView().findViewById(R.id.btnTrArrow);
@@ -103,28 +119,28 @@ public class HomeFragment extends Fragment {
         btnClearMap = getView().findViewById(R.id.btnClearMap);
         tvRoboStatus = getView().findViewById(R.id.tvRoboStatus);
         btnFastestPath = getView().findViewById(R.id.btnFastestPath);
-        btnImageRecognition = getView().findViewById(R.id.btnImageRecognition);
+        btnManualSnap = getView().findViewById(R.id.btnManualSnap);
         tvSelectedObject = getView().findViewById(R.id.tvSelectedObject);
         btnClearObstacles = getView().findViewById(R.id.btnClearObstacles);
         btnClearRobotCar = getView().findViewById(R.id.btnClearRobotCar);
-        btnArenaInfo = getView().findViewById(R.id.btnArenaInfo);
+        btnSetMode = getView().findViewById(R.id.btnSetMode);
+        btnImageRecognition = getView().findViewById(R.id.btnImageRecognition);
 
         // ===================== setup ui elements =====================
-
         // draggable objects
         ivCar.setTag("NEW_CAR");
         ivObstacle.setTag("NEW_OBSTACLE");
 
         // btn cmds
-        manualMovement(btnUp, "f");
-        manualMovement(btnDown,"r");
-        manualMovement(btnTl,"tl");
-        manualMovement(btnTr,"tr");
-        manualMovement(btnBl,"sl");
-        manualMovement(btnBr,"sr");
-        buttonCmd(btnFastestPath,"beginFastest");
-        buttonCmd(btnImageRecognition,"beginExplore");
-        buttonCmd(btnArenaInfo,"sendArena");
+        manualMovement(btnUp, "FW--");
+        manualMovement(btnDown,"BW--");
+        manualMovement(btnTl,"TL--");
+        manualMovement(btnTr,"TR--");
+        manualCmd(btnFastestPath,"WN01");
+        manualCmd(btnManualSnap,"MANSNAP");
+
+        // starting in path mode
+        toggleViewState("path");
 
         // grid map
         rlMap = getView().findViewById(R.id.rlMap);
@@ -244,6 +260,49 @@ public class HomeFragment extends Fragment {
                 pixelGridView.removeAllObstacles();
             }
         });
+
+        btnSetMode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String mode;
+                if (btnSetMode.getText().equals("Mode: Manual")){
+                    // set to path mode
+                    btnSetMode.setText("Mode: Path");
+                    mode = "path";
+                } else {
+                    // set to manual mode
+                    btnSetMode.setText("Mode: Manual");
+                    mode = "manual";
+                }
+
+                toggleViewState(mode);
+
+                JSONObject jsonObject = new JSONObject();
+                try {
+                    jsonObject.put("cat","mode");
+                    jsonObject.put("value",mode);
+                } catch (Exception e){
+                    Log.e(TAG, "btnSetMode: ", e);
+                }
+
+                sendBundle(jsonObject.toString());
+            }
+        });
+
+        btnImageRecognition.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                JSONObject jsonObject = new JSONObject();
+                try {
+                    jsonObject.put("cat","control");
+                    jsonObject.put("value","start");
+                } catch (Exception e){
+                    Log.e(TAG, "btnImageRecognition: ", e);
+                }
+
+                sendBundle(jsonObject.toString());
+            }
+        });
     }
 
     @Override
@@ -275,25 +334,64 @@ public class HomeFragment extends Fragment {
         return super.onContextItemSelected(item);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void manualMovement(ImageButton ib, String direction){
-        ib.setOnClickListener(new View.OnClickListener() {
+        ib.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public void onClick(View v) {
-                sendMessage(direction);
+            public boolean onTouch(View v, MotionEvent event) {
+                if (btnSetMode.getText().equals("Mode: Path")) return true;
+                JSONObject jsonObject = new JSONObject();
+                switch(event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        // send movement command
+                        // hold down button
+                        try {
+                            jsonObject.put("cat","manual");
+                            jsonObject.put("value",direction);
+                            sendBundle(jsonObject.toString());
+                        } catch (Exception e){
+                            Log.e(TAG, "imageButton: "+direction);
+                            Log.e(TAG, "imageButton: ", e);
+                        }
+                        break;
+
+                    case MotionEvent.ACTION_UP:
+                        // send stop command
+                        try {
+                            jsonObject.put("cat","manual");
+                            jsonObject.put("value","STOP");
+                            sendBundle(jsonObject.toString());
+                        } catch (Exception e){
+                            Log.e(TAG, "imageButton: STOP");
+                            Log.e(TAG, "imageButton: ", e);
+                        }
+                        break;
+                }
+                return true;
             }
         });
+
+
     }
 
-    private void buttonCmd(Button button, String command){
+    private void manualCmd(Button button, String command){
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                sendMessage(command);
+                JSONObject jsonObject = new JSONObject();
+                try {
+                    jsonObject.put("cat","manual");
+                    jsonObject.put("value",command);
+                } catch (Exception e){
+                    Log.e(TAG, "manualMovement: ", e);
+                }
+
+                sendBundle(jsonObject.toString());
             }
         });
     }
 
-    private void sendMessage(String msg){
+    private void sendBundle(String msg){
         Bundle bundle = new Bundle();
         bundle.putString("SENT_MESSAGE", msg);
         getChildFragmentManager().setFragmentResult("homeFragToNormalTextFrag", bundle);
@@ -326,6 +424,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void dragNewObject(View v, ImageView iv){
+        if (btnSetMode.getText().equals("Mode: Manual")) return;
         ClipData.Item item = new ClipData.Item((CharSequence) v.getTag());
         ClipData dragData = new ClipData((CharSequence) v.getTag(), new String[] {ClipDescription.MIMETYPE_TEXT_PLAIN}, item);
         View.DragShadowBuilder myShadow = new MyDragShadowBuilder(iv, iv.getDrawable());
@@ -337,4 +436,49 @@ public class HomeFragment extends Fragment {
         tvSelectedObject.setText(selected);
     }
 
+    private void disableView(View view){
+        view.setClickable(false);
+        view.setEnabled(false);
+//        BlendModeColorFilter blendModeColorFilter = new BlendModeColorFilter(Color.DKGRAY, BlendMode.DARKEN);
+//        view.getBackground().setColorFilter(blendModeColorFilter);
+        view.setBackgroundTintList(colorStateList);
+    }
+
+    private void enableView(View view){
+        view.setClickable(true);
+        view.setEnabled(true);
+        //view.getBackground().setColorFilter(null);
+        view.setBackgroundTintList(colorStateList);
+    }
+
+    private void toggleViewState(String mode){
+        switch (mode){
+            case "manual":
+                enableView(btnUp);
+                enableView(btnDown);
+                enableView(btnTl);
+                enableView(btnTr);
+                enableView(btnFastestPath);
+                enableView(btnManualSnap);
+
+                disableView(btnClearMap);
+                disableView(btnClearRobotCar);
+                disableView(btnClearObstacles);
+                disableView(btnImageRecognition);
+                break;
+            case "path":
+                disableView(btnUp);
+                disableView(btnDown);
+                disableView(btnTl);
+                disableView(btnTr);
+                disableView(btnFastestPath);
+                disableView(btnManualSnap);
+
+                enableView(btnClearMap);
+                enableView(btnClearRobotCar);
+                enableView(btnClearObstacles);
+                enableView(btnImageRecognition);
+                break;
+        }
+    }
 }

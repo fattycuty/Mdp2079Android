@@ -17,6 +17,7 @@ import android.view.DragEvent;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -26,6 +27,9 @@ import androidx.core.content.res.ResourcesCompat;
 import com.example.emptymdp.R;
 import com.example.emptymdp.bluetooth.BluetoothConnectionService;
 import com.example.emptymdp.fragments.HomeFragment;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,9 +68,9 @@ public class PixelGridView extends View {
 
     public interface Direction {
         int NORTH = 0;
-        int EAST = 90;
-        int SOUTH = 180;
-        int WEST = 270;
+        int EAST = 2;
+        int SOUTH = 4;
+        int WEST = 6;
     }
 
     public PixelGridView(Context context) {
@@ -159,7 +163,7 @@ public class PixelGridView extends View {
 
         for (int row = 0; row < numRows; row++) {
             for (int col = 0; col < numColumns; col++) {
-                //canvas.drawText("r"+row+",c"+col,(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2,testPaint);
+                canvas.drawText("r"+row+",c"+col,(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2,testPaint);
 
                 if (matrixBoard[row][col] == CellValue.OBSTACLE) {
                     drawObstacle(canvas,row,col);
@@ -187,6 +191,8 @@ public class PixelGridView extends View {
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) throws ArrayIndexOutOfBoundsException{
+        Button btnSetMode = getRootView().findViewById(R.id.btnSetMode);
+        if (btnSetMode.getText().equals("Mode: Manual")) return false;
         return gestureDetector.onTouchEvent(event);
     }
 
@@ -330,7 +336,7 @@ public class PixelGridView extends View {
                 }
                 Obstacle obstacle = new Obstacle(x,y,row,col,++numOfObstacles, false);
                 arena.addObstacle(obstacle);
-                sendObstacleChanges(obstacle);
+                sendObstacleChanges();
                 break;
         }
         
@@ -376,6 +382,7 @@ public class PixelGridView extends View {
                 if (x==-1 && y==-1){
                     clearSelectedObject();
                     removeObstacle(oldRow,oldCol);
+                    sendObstacleChanges();
                     Toast.makeText(getContext(), "Removed Obstacle "+obstacleId, Toast.LENGTH_SHORT).show();
                     break;
                 }
@@ -387,7 +394,7 @@ public class PixelGridView extends View {
                 }
 
                 updateObstacleLocation(oldRow,oldCol,row,col);
-                sendObstacleChanges(obstacle);
+                sendObstacleChanges();
 
                 break;
         }
@@ -433,7 +440,7 @@ public class PixelGridView extends View {
         arena.setArena(numRows,numColumns);
         numOfObstacles = 0;
         clearSelectedValues();
-
+        sendObstacleChanges();
         Toast.makeText(getContext(), "Cleared the map", Toast.LENGTH_SHORT).show();
         
         invalidate();
@@ -496,6 +503,8 @@ public class PixelGridView extends View {
         clearSelectedObject();
 
         numOfObstacles = 0;
+
+        sendObstacleChanges();
 
         Toast.makeText(getContext(), "Removed all obstacles", Toast.LENGTH_SHORT).show();
 
@@ -614,19 +623,40 @@ public class PixelGridView extends View {
         canvas.drawLines(pts,pSelectedBorder);
     }
 
-    public void moveCarWithCommand(String command){
-        // moves car onscreen when user sends movement command
-    }
-
-    private void sendObstacleChanges(Obstacle obstacle){
+    private void sendObstacleChanges(){
         if (btConnSvc == null) btConnSvc = BluetoothConnectionService.getInstance();
         if (btConnSvc.getState() != BluetoothConnectionService.STATE_CONNECTED){
             Toast.makeText(getContext(), "Device is not connected", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String msg = "OBSTACLE,"+obstacle.getObstacleId()+","+obstacle.getRow()+","+obstacle.getCol()+","+obstacle.getTargetAlphaNum();
-        btConnSvc.sendMessage(msg);
+        JSONObject jsonMain = new JSONObject();
+        try {
+            // category
+            jsonMain.put("cat","obstacles");
+
+            // obstacles
+            JSONObject jsonValue = new JSONObject();
+            JSONArray obstacleArray = new JSONArray();
+            JSONObject obstacleAttributes;
+            for (Obstacle obstacle1: arena.getObstacleArrayList()){
+                obstacleAttributes = new JSONObject();
+                int[] newXy = convertRowCol(obstacle1.getRow(),obstacle1.getCol());
+                obstacleAttributes.put("x",Integer.toString(newXy[0]));
+                obstacleAttributes.put("y",Integer.toString(newXy[1]));
+                obstacleAttributes.put("id",Integer.toString(obstacle1.getObstacleId()));
+                obstacleAttributes.put("d",obstacle1.getDirection());
+                obstacleArray.put(obstacleAttributes);
+            }
+            jsonValue.put("obstacles",obstacleArray);
+            jsonValue.put("mode","0"); // mode=0 (indoors) , mode=1 (outdoors)
+            jsonMain.put("value",jsonValue);
+
+        } catch (Exception e){
+            Log.e(TAG, "sendObstacleChanges: ", e);
+        }
+
+        btConnSvc.sendMessage(jsonMain.toString());
     }
     
     public void receiveRobotCoords(int row, int col, int direction){
@@ -766,6 +796,7 @@ public class PixelGridView extends View {
                         "Obstacle "+obstacle.getObstacleId()+" is now facing "+directionString, Toast.LENGTH_SHORT).show();
                 break;
         }
+        sendObstacleChanges();
         invalidate();
     }
 
@@ -804,6 +835,13 @@ public class PixelGridView extends View {
                 break;
         }
         invalidate();
+    }
+
+    public static int[] convertRowCol(int row, int col){
+        int[] newRowCol = new int[2];
+        newRowCol[0] = Math.abs(row-19);
+        newRowCol[1] = col;
+        return newRowCol;
     }
 
 }
