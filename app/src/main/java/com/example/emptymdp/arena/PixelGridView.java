@@ -17,7 +17,6 @@ import android.view.DragEvent;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -27,6 +26,7 @@ import androidx.core.content.res.ResourcesCompat;
 import com.example.emptymdp.R;
 import com.example.emptymdp.bluetooth.BluetoothConnectionService;
 import com.example.emptymdp.fragments.HomeFragment;
+import com.example.emptymdp.fragments.NormalTextFragment;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -63,7 +63,6 @@ public class PixelGridView extends View {
         int CAR = 2;
         int MOVE_OBSTACLE = 3;
         int MOVE_CAR = 4;
-
     }
 
     public interface Direction {
@@ -163,7 +162,7 @@ public class PixelGridView extends View {
 
         for (int row = 0; row < numRows; row++) {
             for (int col = 0; col < numColumns; col++) {
-                canvas.drawText("r"+row+",c"+col,(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2,testPaint);
+                //canvas.drawText("r"+row+",c"+col,(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2,testPaint);
 
                 if (matrixBoard[row][col] == CellValue.OBSTACLE) {
                     drawObstacle(canvas,row,col);
@@ -191,8 +190,6 @@ public class PixelGridView extends View {
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) throws ArrayIndexOutOfBoundsException{
-        Button btnSetMode = getRootView().findViewById(R.id.btnSetMode);
-        if (btnSetMode.getText().equals("Mode: Manual")) return false;
         return gestureDetector.onTouchEvent(event);
     }
 
@@ -624,12 +621,6 @@ public class PixelGridView extends View {
     }
 
     private void sendObstacleChanges(){
-        if (btConnSvc == null) btConnSvc = BluetoothConnectionService.getInstance();
-        if (btConnSvc.getState() != BluetoothConnectionService.STATE_CONNECTED){
-            Toast.makeText(getContext(), "Device is not connected", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         JSONObject jsonMain = new JSONObject();
         try {
             // category
@@ -654,6 +645,13 @@ public class PixelGridView extends View {
 
         } catch (Exception e){
             Log.e(TAG, "sendObstacleChanges: ", e);
+        }
+
+        if (btConnSvc == null) btConnSvc = BluetoothConnectionService.getInstance();
+        if (btConnSvc.getState() != BluetoothConnectionService.STATE_CONNECTED){
+            Toast.makeText(getContext(), "Device is not connected", Toast.LENGTH_SHORT).show();
+            NormalTextFragment.appendFailedMessage(jsonMain.toString());
+            return;
         }
 
         btConnSvc.sendMessage(jsonMain.toString());
@@ -733,8 +731,6 @@ public class PixelGridView extends View {
         } else {
             canvas.drawText(targetAlphaNum,((2 * col + 1)*cellWidth/2.0F),((2 * row + 1)*cellHeight/2.0F), pAlphaNumBig);
         }
-        //            col = (int)(e.getX() / cellWidth);
-        //            row = (int)(e.getY() / cellHeight);
 
         // draw selected outline
         if (selectedObject == CellValue.OBSTACLE && selectedObstacle.getObstacleId() == obstacle.getObstacleId()){

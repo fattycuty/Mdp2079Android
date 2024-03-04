@@ -19,19 +19,14 @@ import androidx.fragment.app.FragmentResultListener;
 import com.example.emptymdp.R;
 import com.example.emptymdp.bluetooth.BluetoothConnectionService;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-
 public class NormalTextFragment extends Fragment {
     private final String TAG = "debugNormalTextFrag";
     static StringBuilder normalTextString = new StringBuilder();
     Button btnSendMsg;
     EditText etSendMsg;
     static TextView tvIncNormalText;
+    ScrollView svNormalText;
+    static ScrollView svNormalTextStatic;
     BluetoothConnectionService btConnSvc;
 
     @Nullable
@@ -56,6 +51,7 @@ public class NormalTextFragment extends Fragment {
 //                message = "Me: "+message+"\n";
                 normalTextString.append(message);
                 tvIncNormalText.setText(normalTextString);
+                svNormalText.fullScroll(View.FOCUS_DOWN);
             }
         });
 
@@ -71,6 +67,8 @@ public class NormalTextFragment extends Fragment {
         btnSendMsg = view.findViewById(R.id.btnSendMsg);
         etSendMsg = view.findViewById(R.id.etSendMsg);
         tvIncNormalText = view.findViewById(R.id.tvIncNormalText);
+        svNormalText = view.findViewById(R.id.svNormalText);
+        svNormalTextStatic = view.findViewById(R.id.svNormalText);
 
         btnSendMsg.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -81,13 +79,6 @@ public class NormalTextFragment extends Fragment {
             }
         });
 
-        final ScrollView scrollview = ((ScrollView) view.findViewById(R.id.svNormalText));
-        scrollview.post(new Runnable() {
-            @Override
-            public void run() {
-                scrollview.fullScroll(ScrollView.FOCUS_DOWN);
-            }
-        });
     }
 
     private void sendMsg(String msg){
@@ -97,18 +88,20 @@ public class NormalTextFragment extends Fragment {
             appendFailedMessage(msg);
             return;
         }
-
         btConnSvc.sendMessage(msg);
+        svNormalText.fullScroll(View.FOCUS_DOWN);
     }
 
-    private static void appendFailedMessage(String message){
+    public static void appendFailedMessage(String message){
         message = "Me: "+message+" (unsent)\n";
         normalTextString.append(message);
         tvIncNormalText.setText(normalTextString);
+        svNormalTextStatic.fullScroll(View.FOCUS_DOWN);
     }
 
     public static void updateTextString(String message){
         normalTextString.append(message);
         tvIncNormalText.setText(normalTextString);
+        svNormalTextStatic.fullScroll(View.FOCUS_DOWN);
     }
 }

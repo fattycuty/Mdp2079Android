@@ -26,7 +26,7 @@ public class ArenaUpdatesFragment extends Fragment {
     private final String TAG = "debugArenaUpdatesFrag";
     static StringBuilder arenaUpdatesString = new StringBuilder();
     static TextView tvIncArenaUpdates;
-    BluetoothConnectionService btConnSvc;
+    ScrollView svArenaUpdates;
     private PixelGridView pixelGridView;
 
     @Nullable
@@ -52,18 +52,11 @@ public class ArenaUpdatesFragment extends Fragment {
         });
 
         tvIncArenaUpdates = view.findViewById(R.id.tvIncArenaUpdates);
-
-        final ScrollView scrollview = ((ScrollView) view.findViewById(R.id.svArenaUpdates));
-        scrollview.post(new Runnable() {
-            @Override
-            public void run() {
-                scrollview.fullScroll(ScrollView.FOCUS_DOWN);
-            }
-        });
+        svArenaUpdates = view.findViewById(R.id.svArenaUpdates);
     }
 
     private void parseMessage(Bundle bundle){
-        String messageType, message = null;
+        String messageType, message;
         int direction;
         JSONObject jsonObject = new JSONObject();
 
@@ -91,9 +84,7 @@ public class ArenaUpdatesFragment extends Fragment {
         int col,row;
         switch (messageType){
             case "SENT_TEXT":
-                message = "Me: "+message+"\n";
-                arenaUpdatesString.append(message);
-                tvIncArenaUpdates.setText(arenaUpdatesString);
+                setArenaUpdatesMessage("Me",message);
                 break;
 
             case "status":
@@ -113,9 +104,7 @@ public class ArenaUpdatesFragment extends Fragment {
 
                     pixelGridView.receiveTargetInfo(Integer.parseInt(value.get("obstacle_id").toString()),value.get("image_id").toString());
 
-                    message = deviceName+":"+message+"\n";
-                    arenaUpdatesString.append(message);
-                    tvIncArenaUpdates.setText(arenaUpdatesString);
+                    setArenaUpdatesMessage(deviceName,message);
                 } catch (JSONException e){
                     Log.e(TAG, "parseMessage: imagerec ", e);
                 }
@@ -137,9 +126,7 @@ public class ArenaUpdatesFragment extends Fragment {
 
                     pixelGridView.receiveRobotCoords(row,col,direction);
 
-                    message = deviceName+":"+message+"\n";
-                    arenaUpdatesString.append(message);
-                    tvIncArenaUpdates.setText(arenaUpdatesString);
+                    setArenaUpdatesMessage(deviceName,message);
                 } catch (JSONException e){
                     Log.e(TAG, "parseMessage: location ", e);
                 }
@@ -236,5 +223,12 @@ public class ArenaUpdatesFragment extends Fragment {
             }
         }
         return true;
+    }
+
+    private void setArenaUpdatesMessage(String deviceName, String message){
+        message = deviceName+":"+message+"\n";
+        arenaUpdatesString.append(message);
+        tvIncArenaUpdates.setText(arenaUpdatesString);
+        svArenaUpdates.fullScroll(View.FOCUS_DOWN);
     }
 }

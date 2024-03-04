@@ -42,8 +42,6 @@ public class BluetoothFragment extends Fragment {
     // final strings
     private static final String TAG = "debugBtFrag";
     private final static int REQUEST_ENABLE_BT = 1;
-    //private static final UUID MY_UUID_INSECURE = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    private static final UUID MY_UUID_SECURE = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
     private static BluetoothConnectionService btConnSvc;
     BluetoothAdapter bluetoothAdapter;
     // layout views
@@ -53,7 +51,7 @@ public class BluetoothFragment extends Fragment {
     DeviceListAdapter availDeviceAdapter, pairedDeviceAdapter;
     TextView tvBtStatus;
     private String mConnectedDeviceName;
-    ProgressDialog mProgressDialog;
+
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -510,6 +508,6 @@ public class BluetoothFragment extends Fragment {
         bundle.putString("Message", msg);
         bundle.putString("Device Name",deviceName);
 
-        getParentFragmentManager().setFragmentResult("btFragtoHomeFrag", bundle);
+        getParentFragmentManager().setFragmentResult("btFragToHomeFrag", bundle);
     }
 }
