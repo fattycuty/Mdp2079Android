@@ -11,6 +11,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.DragEvent;
@@ -46,6 +47,8 @@ public class PixelGridView extends View {
     private final Paint testPaint = new Paint();
     private final Paint pBorder = new Paint();
     private final Paint pSelectedBorder = new Paint();
+    private final Paint pAxisPaintLight = new Paint();
+    private final Paint pAxisPaintDark = new Paint();
     private int selectedObject;
     private Obstacle selectedObstacle;
     Bitmap bmCar;
@@ -89,9 +92,9 @@ public class PixelGridView extends View {
         // paints
         testPaint.setColor(Color.BLACK);
         pBorder.setColor(Color.BLACK);
-        pAlphaNumSmall.setColor(Color.WHITE);
+        pAlphaNumSmall.setColor(Color.MAGENTA);
         pAlphaNumSmall.setTextAlign(Paint.Align.CENTER);
-        pAlphaNumBig.setColor(Color.WHITE);
+        pAlphaNumBig.setColor(Color.MAGENTA);
         pAlphaNumBig.setTextSize(36F);
         pAlphaNumBig.setTextAlign(Paint.Align.CENTER);
         pAlphaNumBig.setFakeBoldText(true);
@@ -99,6 +102,10 @@ public class PixelGridView extends View {
         pObstacleDirection.setColor(Color.YELLOW);
         pSelectedBorder.setColor(Color.GREEN);
         pSelectedBorder.setStrokeWidth(4.0F);
+        pAxisPaintLight.setColor(Color.WHITE);
+        pAxisPaintLight.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        pAxisPaintDark.setColor(Color.BLUE);
+        pAxisPaintDark.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
 
         // car image
         bmCar = BitmapFactory.decodeResource(getResources(), R.drawable.ic_car_up);
@@ -160,16 +167,18 @@ public class PixelGridView extends View {
 
         int[][] matrixBoard = arena.getMatrixBoard();
 
+        // draw obstacles and car
         for (int row = 0; row < numRows; row++) {
             for (int col = 0; col < numColumns; col++) {
-                //canvas.drawText("r"+row+",c"+col,(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2,testPaint);
 
                 if (matrixBoard[row][col] == CellValue.OBSTACLE) {
                     drawObstacle(canvas,row,col);
 
-                } else if (matrixBoard[row][col] == CellValue.CAR && !placedCar) {
-                    drawCar(canvas,row,col);
-                    placedCar = true;
+                } else if (matrixBoard[row][col] == CellValue.CAR) {
+                    int[] middleRowCol = arena.getRobotCar().getRowColMap().get(RobotCar.RobotMapArea.MIDDLE_MIDDLE);
+                    assert middleRowCol != null;
+                    if (middleRowCol[0] == row && middleRowCol[1] == col)
+                        drawCar(canvas,row,col);
                 }
 
             }
@@ -178,10 +187,30 @@ public class PixelGridView extends View {
         int width = getWidth();
         int height = getHeight();
 
+        // draw axis
+        for (int row = 0; row < numRows; row++) {
+            for (int col = 0; col < numColumns; col++) {
+                int[] newRowCol = convertRowCol(row, col);
+                //canvas.drawText("r"+rowCol[0]+",c"+rowCol[1],(2 * col + 1)*cellWidth/2,(2 * row + 1)*cellHeight/2,testPaint);
+                Obstacle obstacle = arena.getObstacle(row,col,-1);
+                if (newRowCol[0] == 0) {
+                    if (obstacle==null)
+                        canvas.drawText(Integer.toString(newRowCol[1]), col * cellWidth, (row + 1) * cellHeight, pAxisPaintDark);
+                    else
+                        canvas.drawText(Integer.toString(newRowCol[1]), col * cellWidth, (row + 1) * cellHeight, pAxisPaintLight);
+                } else if (newRowCol[1] == 0) {
+                    if (obstacle==null)
+                        canvas.drawText(Integer.toString(newRowCol[0]), col * cellWidth, (row + 1) * cellHeight, pAxisPaintDark);
+                    else
+                        canvas.drawText(Integer.toString(newRowCol[0]), col * cellWidth, (row + 1) * cellHeight, pAxisPaintLight);
+                }
+            }
+        }
+
+        // draw borders
         for (int i = 0; i <= numColumns; i++) {
             canvas.drawLine(i * cellWidth, 0, i * cellWidth, height, pBorder);
         }
-
         for (int i = 0; i <= numRows; i++) {
             canvas.drawLine(0, i * cellHeight, width, i * cellHeight, pBorder);
         }
@@ -322,7 +351,7 @@ public class PixelGridView extends View {
                     break;
                 }
 
-                updateCarPosition(x,y,row,col,Direction.NORTH);
+                updateCarPosition(row,col,Direction.NORTH);
 
                 break;
             case CellValue.OBSTACLE:
@@ -362,7 +391,7 @@ public class PixelGridView extends View {
                     break;
                 }
 
-                updateCarPosition(x,y,row,col,arena.getRobotCar().getDirection());
+                updateCarPosition(row,col,arena.getRobotCar().getDirection());
 
                 break;
 
@@ -416,8 +445,10 @@ public class PixelGridView extends View {
                     break;
                 case CellValue.CAR:
                 case CellValue.MOVE_CAR:
-                    for (int r=row;r<row+2;r++){
-                        for (int c=col;c<col+2;c++){
+                    // 3x3 uses row/col -1
+                    // 2x2 uses row/col
+                    for (int r=row-1;r<row+2;r++){
+                        for (int c=col-1;c<col+2;c++){
                             if (matrixArena[r][c] == CellValue.OBSTACLE) return false;
                         }
                     }
@@ -465,9 +496,9 @@ public class PixelGridView extends View {
         invalidate();
     }
 
-    private void updateCarPosition(float x, float y, int row, int col, int direction) {
+    private void updateCarPosition(int row, int col, int direction) {
         clearCar(false);
-        RobotCar robotCar = new RobotCar(x,y,row,col,direction);
+        RobotCar robotCar = new RobotCar(row,col,direction);
         arena.addRobotCar(robotCar);
         invalidate();
     }
@@ -632,9 +663,9 @@ public class PixelGridView extends View {
             JSONObject obstacleAttributes;
             for (Obstacle obstacle1: arena.getObstacleArrayList()){
                 obstacleAttributes = new JSONObject();
-                int[] newXy = convertRowCol(obstacle1.getRow(),obstacle1.getCol());
-                obstacleAttributes.put("x",Integer.toString(newXy[0]));
-                obstacleAttributes.put("y",Integer.toString(newXy[1]));
+                int[] newRowCol = convertRowCol(obstacle1.getRow(),obstacle1.getCol());
+                obstacleAttributes.put("x",Integer.toString(newRowCol[1]));
+                obstacleAttributes.put("y",Integer.toString(newRowCol[0]));
                 obstacleAttributes.put("id",Integer.toString(obstacle1.getObstacleId()));
                 obstacleAttributes.put("d",obstacle1.getDirection());
                 obstacleArray.put(obstacleAttributes);
@@ -663,7 +694,7 @@ public class PixelGridView extends View {
             return;
         }
 
-        updateCarPosition(col,row,row,col,direction);
+        updateCarPosition(row,col,direction);
 
         invalidate();
     }
@@ -740,14 +771,15 @@ public class PixelGridView extends View {
 
     private void drawCar(Canvas canvas, int row, int col){
         // draw car
-//                    RectF rect = new RectF((row-1) * cellWidth, (col-1) * cellHeight,(row + 2) * cellWidth, (col + 2) * cellHeight); // 3x3
-        RectF rect = new RectF(col * cellWidth, row * cellHeight,(col + 2) * cellWidth, (row + 2) * cellHeight); // 2x2
+        RectF rect = new RectF((col-1) * cellWidth, (row-1) * cellHeight,(col + 2) * cellWidth, (row + 2) * cellHeight); // 3x3
+        //RectF rect = new RectF(col * cellWidth, row * cellHeight,(col + 2) * cellWidth, (row + 2) * cellHeight); // 2x2
         bmCar = getCarBitmap();
         canvas.drawBitmap(bmCar, null, rect, null);
 
         // draw selected outline
         if (selectedObject == CellValue.CAR){
-            drawSelectedBorder(canvas, col * cellWidth, row * cellHeight,(col + 2) * cellWidth, (row + 2) * cellHeight);
+            drawSelectedBorder(canvas, (col-1) * cellWidth, (row-1) * cellHeight,(col + 2) * cellWidth, (row + 2) * cellHeight);
+            //drawSelectedBorder(canvas, col * cellWidth, row * cellHeight,(col + 2) * cellWidth, (row + 2) * cellHeight); // 2x2
         }
     }
 

@@ -47,8 +47,6 @@ public class NormalTextFragment extends Fragment {
                 Log.d(TAG, "onFragmentResult: "+requestKey);
                 String message = bundle.getString("Message");
                 assert message != null;
-//                message = message.split(":")[1];
-//                message = "Me: "+message+"\n";
                 normalTextString.append(message);
                 tvIncNormalText.setText(normalTextString);
                 svNormalText.fullScroll(View.FOCUS_DOWN);

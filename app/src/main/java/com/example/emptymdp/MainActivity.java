@@ -72,34 +72,5 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
-
-        checkPermission();
-
-        if (!BluetoothPermissions.checkBluetoothConnectionPermission(this)) {
-            BluetoothPermissions.requestBluetoothPermissions(MainActivity.this);
-        }
-
-
-    }
-
-    public void checkPermission() {
-        if (Build.VERSION.SDK_INT >= 23) {
-            if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{
-                        android.Manifest.permission.ACCESS_FINE_LOCATION,
-                        android.Manifest.permission.ACCESS_COARSE_LOCATION,}, 1);
-            }
-        }
-    }
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-        } else {
-            checkPermission();
-        }
     }
 }

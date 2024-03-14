@@ -84,6 +84,7 @@ public class ArenaUpdatesFragment extends Fragment {
         int col,row;
         switch (messageType){
             case "SENT_TEXT":
+                Log.d(TAG, "parseMessage: sent_text"+message);
                 setArenaUpdatesMessage("Me",message);
                 break;
 
@@ -116,15 +117,17 @@ public class ArenaUpdatesFragment extends Fragment {
                     JSONObject value = new JSONObject(jsonObject.get("value").toString());
 
                     int[] rowCol = PixelGridView.convertRowCol(
-                            Integer.parseInt(value.get("x").toString()),
-                            Integer.parseInt(value.get("y").toString()));
+                            Integer.parseInt(value.get("y").toString()),
+                            Integer.parseInt(value.get("x").toString()));
 
-                    row = rowCol[0];
+                    row = rowCol[0]; // simulator uses MIDDLE_TOP as robot position while canvas uses MIDDLE_MIDDLE
                     col = rowCol[1];
 
                     direction = Integer.parseInt(value.get("d").toString());
 
-                    pixelGridView.receiveRobotCoords(row,col,direction);
+                    int[] rowColDirection = getRobotMiddleFromSimulator(row,col,direction);
+
+                    pixelGridView.receiveRobotCoords(rowColDirection[0],rowColDirection[1],rowColDirection[2]);
 
                     setArenaUpdatesMessage(deviceName,message);
                 } catch (JSONException e){
@@ -151,62 +154,11 @@ public class ArenaUpdatesFragment extends Fragment {
                 }
                 break;
 
-//            case "ROBOTPOSITION":
-//                message = message.replaceAll("\\s+","");
-//                col = Integer.parseInt(message.split(",")[0]);
-//                row = Integer.parseInt(message.split(",")[1]);
-//
-//                direction = Integer.parseInt(message.split(",")[2]);
-//
-//                pixelGridView.receiveRobotCoords(row,col,direction);
-//
-//                message = deviceName+": ROBOTPOSITION("+message+")\n";
-//                arenaUpdatesString.append(message);
-//                tvIncArenaUpdates.setText(arenaUpdatesString);
-//                break;
-//
-//            case "ADDOBSTACLE":
-//                message = message.replaceAll("\\s+","");
-//                col = Integer.parseInt(message.split(",")[0]);
-//                row = Integer.parseInt(message.split(",")[1]);
-//
-//                // handle add
-//                pixelGridView.receiveObstacleCoords(row,col,"ADD");
-//
-//                message = deviceName+": ADDOBSTACLE("+message+")\n";
-//                arenaUpdatesString.append(message);
-//                tvIncArenaUpdates.setText(arenaUpdatesString);
-//                break;
-//
-//            case "REMOVEOBSTACLE":
-//                message = message.replaceAll("\\s+","");
-//                col = Integer.parseInt(message.split(",")[0]);
-//                row = Integer.parseInt(message.split(",")[1]);
-//
-//                // handle remove
-//                pixelGridView.receiveObstacleCoords(row,col,"REMOVE");
-//
-//                message = deviceName+": REMOVEOBSTACLE("+message+")\n";
-//                arenaUpdatesString.append(message);
-//                tvIncArenaUpdates.setText(arenaUpdatesString);
-//                break;
-//
-//            case "TARGET":
-//                int obstacleId = Integer.parseInt(message.split(",")[0]);
-//                String targetId = message.split(",")[1];
-//
-//                pixelGridView.receiveTargetInfo(obstacleId,targetId);
-//
-//                message = deviceName+": TARGET("+message+")\n";
-//                arenaUpdatesString.append(message);
-//                tvIncArenaUpdates.setText(arenaUpdatesString);
-//                break;
-//
             case "NORMAL_RECEIVED_TEXT":
                 // received normal text
+                Log.d(TAG, "parseMessage normal received text: ");
                 message = deviceName+": "+message+"\n";
                 NormalTextFragment.updateTextString(message);
-
                 break;
         }
 
@@ -230,5 +182,32 @@ public class ArenaUpdatesFragment extends Fragment {
         arenaUpdatesString.append(message);
         tvIncArenaUpdates.setText(arenaUpdatesString);
         svArenaUpdates.fullScroll(View.FOCUS_DOWN);
+    }
+
+    private int[] getRobotMiddleFromSimulator(int row, int col, int direction){
+        int[] rowColDirection = new int[3];
+
+        switch (direction){
+            case PixelGridView.Direction.NORTH:
+                rowColDirection[0] = row+1;
+                rowColDirection[1] = col;
+                break;
+            case PixelGridView.Direction.EAST:
+                rowColDirection[0] = row;
+                rowColDirection[1] = col-1;
+                break;
+            case PixelGridView.Direction.SOUTH:
+                rowColDirection[0] = row-1;
+                rowColDirection[1] = col;
+                break;
+            case PixelGridView.Direction.WEST:
+                rowColDirection[0] = row;
+                rowColDirection[1] = col+1;
+                break;
+        }
+
+        rowColDirection[2] = direction;
+
+        return rowColDirection;
     }
 }

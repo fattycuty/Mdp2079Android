@@ -21,7 +21,7 @@ import org.json.JSONObject;
 
 public class ModePathFragment extends Fragment {
     private final String TAG = "debugPathFragment";
-    Button btnClearMap,btnClearRobotCar, btnClearObstacles, btnImageRecognition;
+    Button btnClearMap,btnClearRobotCar, btnClearObstacles, btnImageRecognition, btnCalcPath;
     ImageView ivCar, ivObstacle;
     PixelGridView pixelGridView;
     @Nullable
@@ -42,6 +42,7 @@ public class ModePathFragment extends Fragment {
         btnClearObstacles = getView().findViewById(R.id.btnClearObstacles);
         btnClearRobotCar = getView().findViewById(R.id.btnClearRobotCar);
         btnImageRecognition = getView().findViewById(R.id.btnImageRecognition);
+        btnCalcPath = getView().findViewById(R.id.btnCalcPath);
 
         // ===================== setup ui elements =====================
         // draggable objects
@@ -97,6 +98,21 @@ public class ModePathFragment extends Fragment {
                     jsonObject.put("value","start");
                 } catch (Exception e){
                     Log.e(TAG, "btnImageRecognition: ", e);
+                }
+
+                sendBundle(jsonObject.toString());
+            }
+        });
+
+        btnCalcPath.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                JSONObject jsonObject = new JSONObject();
+                try {
+                    jsonObject.put("cat","obstacles_fin");
+                    jsonObject.put("value","finish");
+                } catch (Exception e){
+                    Log.e(TAG, "btnCalcPath: ", e);
                 }
 
                 sendBundle(jsonObject.toString());

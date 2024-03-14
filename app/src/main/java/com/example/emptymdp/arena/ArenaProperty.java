@@ -70,6 +70,7 @@ public class ArenaProperty {
         HashMap<Integer, int[]> rowColMap = robotCar.getRowColMap();
         for (int i=0;i<rowColMap.size();i++){
             rowCol = rowColMap.get(i);
+            assert rowCol != null;
             matrixBoard[rowCol[0]][rowCol[1]] = PixelGridView.CellValue.CAR;
         }
     }

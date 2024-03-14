@@ -29,6 +29,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.emptymdp.MainActivity;
 import com.example.emptymdp.utilities.DeviceListAdapter;
 import com.example.emptymdp.R;
 import com.example.emptymdp.bluetooth.BluetoothConnectionService;
@@ -52,16 +53,6 @@ public class BluetoothFragment extends Fragment {
     TextView tvBtStatus;
     private String mConnectedDeviceName;
 
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        // get bt adapter
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (btConnSvc==null)
-            btConnSvc = new BluetoothConnectionService(getContext(),mHandler);
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -73,6 +64,15 @@ public class BluetoothFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // get bt adapter
+        while (!BluetoothPermissions.checkBluetoothConnectionPermission(getContext())) {
+            BluetoothPermissions.requestBluetoothPermissions(getActivity());
+        }
+
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bluetoothAdapter!=null && btConnSvc==null)
+            btConnSvc = new BluetoothConnectionService(getContext(),mHandler);
+
         // ===================== getting ui elements =====================
         lvAvail = getActivity().findViewById(R.id.lvAvailDevices);
         lvPaired = getActivity().findViewById(R.id.lvPairedDevices);
@@ -81,7 +81,7 @@ public class BluetoothFragment extends Fragment {
         btnStopScan = getActivity().findViewById(R.id.btnBtStopScan);
         btnMakeDiscoverable = getActivity().findViewById(R.id.btnBtDiscoverable);
         tvBtStatus = getActivity().findViewById(R.id.tvBtStatus);
-        
+
 
         // ===================== set on click listeners =====================
         btnStartScan.setOnClickListener(new View.OnClickListener() {
@@ -151,7 +151,8 @@ public class BluetoothFragment extends Fragment {
         });
 
         // display paired devices
-        if (bluetoothAdapter.isEnabled()) getPairedDevices();
+        if (bluetoothAdapter!=null && bluetoothAdapter.isEnabled())
+            getPairedDevices();
 
         // ===================== Register Receivers =====================
 
@@ -462,17 +463,13 @@ public class BluetoothFragment extends Fragment {
                     byte[] writeBuf = (byte[]) msg.obj;
                     // construct a string from the buffer
                     String writeMessage = new String(writeBuf);
-                    //HomeFragment.getMessage("Me:  " + writeMessage+"\n");
-                    writeMessage = "SENT_TEXT:"+writeMessage;
+                    writeMessage = "Me:"+writeMessage+"\n";
                     sendToHomeFrag("Me",writeMessage,"btFragToNormalTextFrag");
                     break;
                 case BluetoothConnectionService.Constants.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
-                    //Log.d(TAG, "handleMessage: "+readMessage);
-                    // handle message differently once we agree on the format
-                    //HomeFragment.getMessage(mConnectedDeviceName + ":  " + readMessage+"\n");
                     sendToHomeFrag(mConnectedDeviceName,readMessage,"btFragToArenaUpdatesFrag");
                     break;
                 case BluetoothConnectionService.Constants.MESSAGE_DEVICE_NAME:
@@ -509,5 +506,12 @@ public class BluetoothFragment extends Fragment {
         bundle.putString("Device Name",deviceName);
 
         getParentFragmentManager().setFragmentResult("btFragToHomeFrag", bundle);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (bluetoothAdapter!=null && btConnSvc==null)
+            btConnSvc = new BluetoothConnectionService(getContext(),mHandler);
     }
 }

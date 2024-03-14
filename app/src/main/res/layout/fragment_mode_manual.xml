@@ -16,7 +16,7 @@
             android:id="@+id/tvMoveRobotCar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Move RobotCar:"
+            android:text="Move RobotCar (hold and release):"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -29,35 +29,35 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tvMoveRobotCar">
 
-            <ImageButton
+            <Button
                 android:id="@+id/btnTlArrow"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_tl_arrow"
+                android:text="TL"
                 app:layout_column="0"
                 app:layout_row="0" />
 
-            <ImageButton
+            <Button
                 android:id="@+id/btnTopArrow"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_top_arrow"
+                android:text="FW"
                 app:layout_column="1"
                 app:layout_row="0" />
 
-            <ImageButton
+            <Button
                 android:id="@+id/btnTrArrow"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_tr_arrow"
+                android:text="TR"
                 app:layout_column="2"
                 app:layout_row="0" />
 
-            <ImageButton
+            <Button
                 android:id="@+id/btnDownArrow"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_bottom_arrow"
+                android:text="BW"
                 app:layout_column="1"
                 app:layout_row="1" />
         </androidx.gridlayout.widget.GridLayout>
@@ -70,7 +70,7 @@
         android:text="Start Fastest Path"
         app:layout_constraintEnd_toStartOf="@+id/btnManualSnap"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintHorizontal_chainStyle="spread"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

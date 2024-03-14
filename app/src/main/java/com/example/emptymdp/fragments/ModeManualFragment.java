@@ -21,7 +21,7 @@ import org.json.JSONObject;
 public class ModeManualFragment extends Fragment {
     private final String TAG = "debugManualFrag";
     Button btnFastestPath, btnManualSnap;
-    ImageButton btnTl,btnTr,btnUp,btnDown;
+    Button btnTl,btnTr,btnUp,btnDown;
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -52,8 +52,8 @@ public class ModeManualFragment extends Fragment {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private void manualMovement(ImageButton ib, String direction){
-        ib.setOnTouchListener(new View.OnTouchListener() {
+    private void manualMovement(Button btn, String direction){
+        btn.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 //if (btnSetMode.getText().equals("Mode: Path")) return true;
@@ -84,7 +84,7 @@ public class ModeManualFragment extends Fragment {
                         }
                         break;
                 }
-                return true;
+                return false;
             }
         });
     }
