@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.emptymdp.R;
+import com.example.emptymdp.arena.PixelGridView;
 
 import org.json.JSONObject;
 
@@ -46,9 +47,27 @@ public class ModeManualFragment extends Fragment {
         manualMovement(btnDown,"BW--");
         manualMovement(btnTl,"TL--");
         manualMovement(btnTr,"TR--");
-        manualCmd(btnFastestPath,"WN01");
         manualCmd(btnManualSnap,"MANSNAP");
 
+        btnFastestPath.setOnClickListener( v-> {
+            int arenaLocation  = PixelGridView.getInstance().getArenaLocation();
+            String arenaLocationStr;
+            if (arenaLocation == PixelGridView.ArenaLocation.INDOOR){
+                 arenaLocationStr = "WN01";
+            } else {
+                arenaLocationStr = "WN02";
+            }
+
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("cat","manual");
+                jsonObject.put("value",arenaLocationStr);
+            } catch (Exception e){
+                Log.e(TAG, "manualMovement: ", e);
+            }
+
+            sendBundle(jsonObject.toString());
+        });
     }
 
     @SuppressLint("ClickableViewAccessibility")

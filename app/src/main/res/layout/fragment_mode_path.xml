@@ -9,6 +9,7 @@
         android:id="@+id/btnImageRecognition"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minHeight="0dp"
         android:text="Start Image Recognition"
         app:layout_constraintEnd_toStartOf="@+id/btnCalcPath"
         app:layout_constraintHorizontal_bias="0.5"
@@ -20,6 +21,7 @@
         android:id="@+id/btnCalcPath"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minHeight="0dp"
         android:text="Calculate Path"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -31,48 +33,53 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/constraintLayout4">
-
-        <Button
-            android:id="@+id/btnClearObstacles"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="All Obstacles"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toEndOf="@+id/btnClearRobotCar"
-            app:layout_constraintTop_toBottomOf="@+id/tvClearButtonsText" />
 
         <TextView
             android:id="@+id/tvClearButtonsText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Clear Options"
+            android:text="Reset Options"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Button
+            android:id="@+id/btnResetObsNum"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="0dp"
+            android:text="Obs Values"
+            app:layout_constraintEnd_toStartOf="@+id/btnClearObstacles"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/btnClearMap"
+            app:layout_constraintTop_toBottomOf="@+id/tvClearButtonsText" />
+
+        <Button
             android:id="@+id/btnClearMap"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="0dp"
             android:text="Map"
-            app:layout_constraintEnd_toStartOf="@+id/btnClearRobotCar"
+            app:layout_constraintEnd_toStartOf="@+id/btnResetObsNum"
             app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintHorizontal_chainStyle="packed"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tvClearButtonsText" />
 
         <Button
-            android:id="@+id/btnClearRobotCar"
+            android:id="@+id/btnClearObstacles"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="RobotCar"
-            app:layout_constraintEnd_toStartOf="@+id/btnClearObstacles"
+            android:layout_marginTop="4dp"
+            android:minHeight="0dp"
+            android:text="All Obs"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toEndOf="@+id/btnClearMap"
+            app:layout_constraintStart_toEndOf="@+id/btnResetObsNum"
             app:layout_constraintTop_toBottomOf="@+id/tvClearButtonsText" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -82,13 +89,13 @@
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnImageRecognition">
+        app:layout_constraintTop_toBottomOf="@+id/btnToggleLocation">
 
         <TextView
             android:id="@+id/tvDragObjects"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Drag RobotCar/Obstacle to Map"
+            android:text="Drag to Map or Select to Place \n (Select again to stop placing)"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -117,6 +124,18 @@
                 app:layout_column="2"
                 app:layout_row="0" />
         </androidx.gridlayout.widget.GridLayout>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <Button
+        android:id="@+id/btnToggleLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="0dp"
+        android:text="Toggle Location"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnImageRecognition" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

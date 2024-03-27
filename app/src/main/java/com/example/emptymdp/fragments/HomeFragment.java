@@ -37,7 +37,7 @@ import java.util.Objects;
 public class HomeFragment extends Fragment {
 
     private final String TAG = "debugHomeFrag";
-    static TextView tvRoboStatus, tvSelectedObject;
+    static TextView tvRoboStatus, tvSelectedObject, tvPlacementOption, tvLocation;
     RelativeLayout rlMap;
     PixelGridView pixelGridView;
     ViewPager2 vpMessages, vpModes;
@@ -152,6 +152,8 @@ public class HomeFragment extends Fragment {
         // ===================== ui elements =====================
         tvRoboStatus = getView().findViewById(R.id.tvRoboStatus);
         tvSelectedObject = getView().findViewById(R.id.tvSelectedObject);
+        tvPlacementOption = getView().findViewById(R.id.tvPlacementOption);
+        tvLocation = getView().findViewById(R.id.tvLocation);
 
         // grid map
         rlMap = getView().findViewById(R.id.rlMap);
@@ -233,6 +235,7 @@ public class HomeFragment extends Fragment {
                 return false;
             }
         });
+
     }
 
     @Override
@@ -299,5 +302,15 @@ public class HomeFragment extends Fragment {
     public static void setTvSelectedObject(String selected){
         selected = "Selected: "+selected;
         tvSelectedObject.setText(selected);
+    }
+
+    public static void setTvPlacementOption(String cellValue){
+        cellValue = "Placing: "+cellValue;
+        tvPlacementOption.setText(cellValue);
+    }
+
+    public static void setTvLocation(String location){
+        location = "Location: "+location;
+        tvLocation.setText(location);
     }
 }

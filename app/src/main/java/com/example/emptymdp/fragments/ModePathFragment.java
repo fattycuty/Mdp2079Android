@@ -21,7 +21,7 @@ import org.json.JSONObject;
 
 public class ModePathFragment extends Fragment {
     private final String TAG = "debugPathFragment";
-    Button btnClearMap,btnClearRobotCar, btnClearObstacles, btnImageRecognition, btnCalcPath;
+    Button btnClearMap, btnClearObstacles, btnImageRecognition, btnCalcPath, btnResetObsNum, btnToggleLocation;
     ImageView ivCar, ivObstacle;
     PixelGridView pixelGridView;
     @Nullable
@@ -40,9 +40,10 @@ public class ModePathFragment extends Fragment {
         ivObstacle = getView().findViewById(R.id.ivObstacle);
         btnClearMap = getView().findViewById(R.id.btnClearMap);
         btnClearObstacles = getView().findViewById(R.id.btnClearObstacles);
-        btnClearRobotCar = getView().findViewById(R.id.btnClearRobotCar);
         btnImageRecognition = getView().findViewById(R.id.btnImageRecognition);
         btnCalcPath = getView().findViewById(R.id.btnCalcPath);
+        btnResetObsNum = getView().findViewById(R.id.btnResetObsNum);
+        btnToggleLocation = getView().findViewById(R.id.btnToggleLocation);
 
         // ===================== setup ui elements =====================
         // draggable objects
@@ -60,18 +61,19 @@ public class ModePathFragment extends Fragment {
             }
         });
 
-        btnClearRobotCar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                pixelGridView.clearCar(true);
-            }
-        });
-
         btnClearObstacles.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                pixelGridView.removeAllObstacles();
+                pixelGridView.clearAllObstacles();
             }
+        });
+
+        ivCar.setOnClickListener(v -> {
+            PixelGridView.getInstance().setPlacementCellValue(PixelGridView.CellValue.CAR, false);
+        });
+
+        ivObstacle.setOnClickListener(v -> {
+            PixelGridView.getInstance().setPlacementCellValue(PixelGridView.CellValue.OBSTACLE, false);
         });
 
         ivCar.setOnLongClickListener(new View.OnLongClickListener() {
@@ -117,6 +119,13 @@ public class ModePathFragment extends Fragment {
 
                 sendBundle(jsonObject.toString());
             }
+        });
+        btnResetObsNum.setOnClickListener(v -> {
+            pixelGridView.resetObstacleValues();
+        });
+
+        btnToggleLocation.setOnClickListener(v -> {
+            pixelGridView.toggleLocation();
         });
     }
 

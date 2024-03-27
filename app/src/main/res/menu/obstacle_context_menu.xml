@@ -2,21 +2,22 @@
 <menu xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:title="Set North"
-        android:id="@+id/miSetNorth"/>
     <item
+        android:id="@+id/miSetNorth"
+        android:title="Set Up" />
+    <item
+        android:id="@+id/miSetEast"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:title="Set East"
-        android:id="@+id/miSetEast"/>
+        android:title="Set Right" />
     <item
+        android:id="@+id/miSetSouth"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:title="Set South"
-        android:id="@+id/miSetSouth"/>
+        android:title="Set Down" />
     <item
+        android:id="@+id/miSetWest"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:title="Set West"
-        android:id="@+id/miSetWest"/>
+        android:title="Set Left" />
 </menu>

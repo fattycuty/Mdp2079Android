@@ -32,6 +32,7 @@ import com.example.emptymdp.fragments.NormalTextFragment;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
@@ -51,8 +52,11 @@ public class PixelGridView extends View {
     private final Paint pAxisPaintDark = new Paint();
     private int selectedObject;
     private Obstacle selectedObstacle;
+    private ArrayDeque<Integer> draggedOutQueue;
+    private int placementCellValue = CellValue.EMPTY;
     Bitmap bmCar;
     private ArenaProperty arena;
+    private int arenaLocation = ArenaLocation.INDOOR;
     private int numOfObstacles = 0;
     private BluetoothConnectionService btConnSvc;
     GestureDetector gestureDetector;
@@ -73,6 +77,11 @@ public class PixelGridView extends View {
         int EAST = 2;
         int SOUTH = 4;
         int WEST = 6;
+    }
+
+    public interface ArenaLocation {
+        int INDOOR = 0;
+        int OUTDOOR = 1;
     }
 
     public PixelGridView(Context context) {
@@ -112,6 +121,9 @@ public class PixelGridView extends View {
 
         // create arena
         arena = new ArenaProperty();
+
+        // create queue
+        draggedOutQueue = new ArrayDeque<>();
     }
 
     public static PixelGridView getInstance(){
@@ -252,7 +264,21 @@ public class PixelGridView extends View {
 
             } else if (curObj == CellValue.EMPTY){
                 //Log.d(TAG, "onDown: selected empty cell");
-                setSelectedObject(CellValue.EMPTY,null);
+                if (placementCellValue == CellValue.EMPTY)
+                    setSelectedObject(CellValue.EMPTY,null);
+                else {
+                    int type;
+                    switch (placementCellValue){
+                        case CellValue.CAR:
+                            type = CellValue.CAR;
+                            newCell(type,e.getX(),e.getY());
+                            break;
+                        case CellValue.OBSTACLE:
+                            type = CellValue.OBSTACLE;
+                            newCell(type,e.getX(),e.getY());
+                            break;
+                    }
+                }
             }
 
             return true;
@@ -332,6 +358,8 @@ public class PixelGridView extends View {
                 type = CellValue.MOVE_CAR;
                 moveCell(type,x,y, dragEvent.getLocalState());
             }
+            setPlacementCellValue(CellValue.EMPTY, true);
+
         }
     }
 
@@ -352,7 +380,7 @@ public class PixelGridView extends View {
                 }
 
                 updateCarPosition(row,col,Direction.NORTH);
-
+                setPlacementCellValue(CellValue.CAR, true);
                 break;
             case CellValue.OBSTACLE:
                 check = legalPlacementBoundary(x,y, CellValue.OBSTACLE,0,0);
@@ -360,9 +388,19 @@ public class PixelGridView extends View {
                     Toast.makeText(getContext(), "Cannot place obstacle here", Toast.LENGTH_SHORT).show();
                     break;
                 }
-                Obstacle obstacle = new Obstacle(x,y,row,col,++numOfObstacles, false);
+
+                int obstacleId;
+
+                if (!draggedOutQueue.isEmpty()){
+                    obstacleId = draggedOutQueue.remove();
+                } else {
+                    obstacleId = ++numOfObstacles;
+                }
+
+                Obstacle obstacle = new Obstacle(x,y,row,col,obstacleId, false);
                 arena.addObstacle(obstacle);
                 sendObstacleChanges();
+                setPlacementCellValue(CellValue.OBSTACLE, true);
                 break;
         }
         
@@ -392,7 +430,7 @@ public class PixelGridView extends View {
                 }
 
                 updateCarPosition(row,col,arena.getRobotCar().getDirection());
-
+                setPlacementCellValue(CellValue.EMPTY, true);
                 break;
 
             case CellValue.MOVE_OBSTACLE:
@@ -410,6 +448,7 @@ public class PixelGridView extends View {
                     removeObstacle(oldRow,oldCol);
                     sendObstacleChanges();
                     Toast.makeText(getContext(), "Removed Obstacle "+obstacleId, Toast.LENGTH_SHORT).show();
+                    draggedOutQueue.add(obstacleId);
                     break;
                 }
 
@@ -421,7 +460,7 @@ public class PixelGridView extends View {
 
                 updateObstacleLocation(oldRow,oldCol,row,col);
                 sendObstacleChanges();
-
+                setPlacementCellValue(CellValue.EMPTY, true);
                 break;
         }
         invalidate();
@@ -469,6 +508,8 @@ public class PixelGridView extends View {
         numOfObstacles = 0;
         clearSelectedValues();
         sendObstacleChanges();
+        draggedOutQueue = new ArrayDeque<>();
+        setPlacementCellValue(CellValue.EMPTY, false);
         Toast.makeText(getContext(), "Cleared the map", Toast.LENGTH_SHORT).show();
         
         invalidate();
@@ -522,7 +563,7 @@ public class PixelGridView extends View {
         invalidate();
     }
 
-    public void removeAllObstacles(){
+    public void clearAllObstacles(){
         for (Obstacle obstacle:arena.getObstacleArrayList()){
             arena.getMatrixBoard()[obstacle.getRow()][obstacle.getCol()] = CellValue.EMPTY;
         }
@@ -533,6 +574,10 @@ public class PixelGridView extends View {
         numOfObstacles = 0;
 
         sendObstacleChanges();
+
+        draggedOutQueue = new ArrayDeque<>();
+
+        setPlacementCellValue(CellValue.EMPTY, false);
 
         Toast.makeText(getContext(), "Removed all obstacles", Toast.LENGTH_SHORT).show();
 
@@ -548,6 +593,15 @@ public class PixelGridView extends View {
         obstacle.setCol(newCol);
         arena.getMatrixBoard()[oldRow][oldCol] = CellValue.EMPTY;
         arena.getMatrixBoard()[newRow][newCol] = CellValue.OBSTACLE;
+
+        invalidate();
+    }
+
+    public void resetObstacleValues(){
+        for (Obstacle obstacle:arena.getObstacleArrayList()){
+            obstacle.setTargetAlphaNum(null);
+        }
+        Toast.makeText(getContext(), "Obstacle values reset successfully", Toast.LENGTH_SHORT).show();
 
         invalidate();
     }
@@ -671,7 +725,7 @@ public class PixelGridView extends View {
                 obstacleArray.put(obstacleAttributes);
             }
             jsonValue.put("obstacles",obstacleArray);
-            jsonValue.put("mode","0"); // mode=0 (indoors) , mode=1 (outdoors)
+            jsonValue.put("mode",Integer.toString(arenaLocation)); // mode=0 (indoors) , mode=1 (outdoors)
             jsonMain.put("value",jsonValue);
 
         } catch (Exception e){
@@ -870,6 +924,56 @@ public class PixelGridView extends View {
         newRowCol[0] = Math.abs(row-19);
         newRowCol[1] = col;
         return newRowCol;
+    }
+
+    public void setPlacementCellValue(int cellValue, boolean isDragged){
+        switch (cellValue){
+            case CellValue.CAR:
+                if (placementCellValue == CellValue.CAR && !isDragged){
+                    HomeFragment.setTvPlacementOption("None");
+                    placementCellValue = CellValue.EMPTY;
+                } else {
+                    HomeFragment.setTvPlacementOption("Car");
+                    placementCellValue = CellValue.CAR;
+                }
+                break;
+            case CellValue.OBSTACLE:
+                if (placementCellValue == CellValue.OBSTACLE && !isDragged){
+                    HomeFragment.setTvPlacementOption("None");
+                    placementCellValue = CellValue.EMPTY;
+                } else {
+                    int obstacleNum;
+
+                    if (!draggedOutQueue.isEmpty()){
+                        obstacleNum = draggedOutQueue.peek();
+                    } else {
+                        obstacleNum = PixelGridView.getInstance().numOfObstacles+1;
+                    }
+
+                    HomeFragment.setTvPlacementOption("Obstacle "+obstacleNum);
+                    placementCellValue = CellValue.OBSTACLE;
+                }
+                break;
+            case CellValue.EMPTY:
+                HomeFragment.setTvPlacementOption("None");
+                placementCellValue = CellValue.EMPTY;
+                break;
+        }
+    }
+
+    public void toggleLocation(){
+        if (arenaLocation == ArenaLocation.INDOOR){
+            arenaLocation = ArenaLocation.OUTDOOR;
+            HomeFragment.setTvLocation("Outdoor");
+        } else {
+            arenaLocation = ArenaLocation.INDOOR;
+            HomeFragment.setTvLocation("Indoor");
+        }
+        sendObstacleChanges();
+    }
+
+    public int getArenaLocation(){
+        return arenaLocation;
     }
 
 }
